@@ -1,0 +1,38 @@
+# Target build directories
+**/target/
+**/build/
+**/dist/
+**/node_modules/
+
+# Logs & temporary files
+*.log
+**/logs/
+*.tmp
+*.swp
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables & sensitive secret files
+.env
+.env.*
+*.env
+.env.local
+.env.*.local
+**/.env
+**/.env.*
+**/*.env
+
+# Dependency & build cache
+.mvn/
+.gradle/
+

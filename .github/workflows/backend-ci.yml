@@ -1,0 +1,47 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'LearningPlatformApplication/**'
+      - 'video-worker/**'
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-learning-platform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build LearningPlatformApplication
+        run: |
+          cd LearningPlatformApplication
+          mvn clean test-compile
+
+  build-video-worker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build video-worker
+        run: |
+          cd video-worker
+          mvn clean test-compile
