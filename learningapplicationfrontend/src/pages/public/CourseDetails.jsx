@@ -349,20 +349,11 @@ const CourseDetails = () => {
           </div>
         )}
 
-        {/* Enrolled Workspace Split Layout */}
-        <div style={{ display: 'flex', flex: 1, minHeight: 'calc(100vh - 140px)' }}>
+        {/* Enrolled Workspace Responsive Split Layout */}
+        <div className="course-workspace-layout">
           
           {/* LEFT SIDEBAR: Collapsible Topic Dropdowns (Array, Linked List, DP, etc.) */}
-          <div
-            style={{
-              width: '320px',
-              minWidth: '280px',
-              borderRight: '1px solid var(--border-color)',
-              background: 'var(--bg-card)',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
+          <div className="course-sidebar">
             <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
               <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
                 📚 COURSE TOPICS ({course?.chapters?.length || 0} TOPICS, {totalCount} LESSONS)
@@ -498,7 +489,7 @@ const CourseDetails = () => {
           </div>
 
           {/* RIGHT SIDE MAIN CONTENT AREA */}
-          <div style={{ flex: 1, padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px', background: 'var(--bg-primary)', overflowY: 'auto' }}>
+          <div className="course-content-area" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
             {/* Header & Mark Complete */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>

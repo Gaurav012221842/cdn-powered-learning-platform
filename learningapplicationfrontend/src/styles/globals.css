@@ -272,7 +272,226 @@ textarea {
   padding: 0 24px;
 }
 
-
 .auth-toggle-box {
   display: none;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE SYSTEM & MEDIA QUERIES (Phones, Tablets & Small Screens)
+   ========================================================================== */
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Navigation Responsiveness */
+.mobile-menu-toggle {
+  display: none;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 20px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.desktop-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.mobile-drawer {
+  display: none;
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-nav);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 20px;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 999;
+  border-top: 1px solid var(--border-color);
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Course Workspace Responsive Layout */
+.course-workspace-layout {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: calc(100vh - 140px);
+}
+
+.course-sidebar {
+  width: 340px;
+  min-width: 300px;
+  max-width: 380px;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.course-content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--bg-primary);
+  min-width: 0; /* Prevents flex children from overflowing */
+}
+
+/* Responsive Grids */
+.responsive-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.responsive-grid-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+/* Table Responsive Wrapper */
+.responsive-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+/* Tablet Breakpoint (<= 1024px) */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 18px;
+  }
+
+  .course-sidebar {
+    width: 280px;
+    min-width: 260px;
+  }
+}
+
+/* Mobile Breakpoint (<= 768px) */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 14px;
+  }
+
+  /* Typography Auto-Scaling */
+  h1, .hero-title {
+    font-size: 26px !important;
+    line-height: 1.25 !important;
+  }
+
+  h2 {
+    font-size: 20px !important;
+  }
+
+  h3 {
+    font-size: 17px !important;
+  }
+
+  p, span, li {
+    font-size: 14px;
+  }
+
+  /* Navigation */
+  .desktop-nav-group {
+    display: none !important;
+  }
+
+  .mobile-menu-toggle {
+    display: inline-flex !important;
+  }
+
+  .mobile-drawer.open {
+    display: flex !important;
+  }
+
+  /* Course Workspace Stacks Vertically on Phones */
+  .course-workspace-layout {
+    flex-direction: column !important;
+    min-height: auto !important;
+  }
+
+  .course-sidebar {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    border-right: none !important;
+    border-top: 1px solid var(--border-color) !important;
+    order: 2; /* Shows video on top, syllabus below on mobile */
+  }
+
+  .course-content-area {
+    padding: 14px !important;
+    order: 1;
+    width: 100% !important;
+  }
+
+  /* Card and Form Touch Optimizations */
+  .card {
+    padding: 16px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .form-input, .btn {
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+    min-height: 44px; /* Apple iOS standard tap target */
+  }
+
+  .responsive-grid-cards {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .responsive-grid-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Modals & Dialogs fill mobile screen nicely */
+  .modal-content {
+    width: 95% !important;
+    max-width: 95% !important;
+    padding: 16px !important;
+    margin: 10px auto !important;
+  }
+
+  /* Video player touches edge on mobile for maximum viewability */
+  .video-container-mobile {
+    border-radius: 8px !important;
+    margin: 0 -4px;
+  }
+}
+
+/* Small Phones (<= 480px) */
+@media (max-width: 480px) {
+  .responsive-grid-stats {
+    grid-template-columns: 1fr !important;
+  }
+
+  .container {
+    padding: 0 10px;
+  }
+
+  .btn {
+    width: 100%;
+  }
 }
