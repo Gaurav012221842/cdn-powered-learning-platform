@@ -11,8 +11,8 @@ spring:
   mail:
     host: ${SPRING_MAIL_HOST:smtp.gmail.com}
     port: ${SPRING_MAIL_PORT:587}
-    username: ${SPRING_MAIL_USERNAME}
-    password: ${SPRING_MAIL_PASSWORD}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
@@ -25,7 +25,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/learning_platform}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -44,7 +44,7 @@ spring:
     redis:
       host: ${SPRING_REDIS_HOST:localhost}
       port: ${SPRING_REDIS_PORT:6379}
-      username: ${SPRING_REDIS_USERNAME:}
+      username: ${SPRING_REDIS_USERNAME:default}
       password: ${SPRING_REDIS_PASSWORD:}
       ssl:
         enabled: ${SPRING_REDIS_SSL_ENABLED:false}
@@ -61,7 +61,7 @@ spring:
         request.timeout.ms: 3000
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 site:
   name: Gaurav
@@ -72,7 +72,7 @@ site:
   defaultTheme: light
 
 app:
-  base-url: ${APP_BASE_URL:http://localhost:8080}
+  base-url: ${APP_BASE_URL:${RENDER_EXTERNAL_URL:http://localhost:8080}}
   security:
     master-admin-email: ${MASTER_ADMIN_EMAIL:serversidegaurav@gmail.com}
 
@@ -86,14 +86,14 @@ cloudflare:
     access-key: ${R2_ACCESS_KEY:dev-access-key}
     secret-key: ${R2_SECRET_KEY:dev-secret-key}
     bucket-name: ${R2_BUCKET_NAME:learning-platform}
-    cdn-url: ${R2_CDN_URL}
+    cdn-url: ${R2_CDN_URL:}
 
 razorpay:
   key-id: ${RAZORPAY_KEY_ID:rzp_test_mockkey123}
   key-secret: ${RAZORPAY_KEY_SECRET:mocksecret123}
 
 local:
-  uploads-url: ${LOCAL_UPLOADS_URL}
+  uploads-url: ${LOCAL_UPLOADS_URL:}
 
 management:
   endpoints:
