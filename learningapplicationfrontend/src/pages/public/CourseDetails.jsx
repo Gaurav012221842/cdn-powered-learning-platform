@@ -154,18 +154,26 @@ const CourseDetails = () => {
   }, [courseId, user]);
 
   const handleLessonSelect = (lesson, isPreviewAllowed) => {
-    if (isEnrolled || localStorage.getItem(`enrolled_${courseId}`) === 'true' || isPreviewAllowed) {
+    if (isPreviewAllowed || isEnrolled) {
       setActiveLesson(lesson);
       setQuizAnswers({});
       setQuizScore(null);
+    } else if (!user) {
+      showToast('🔒 Please sign in to access course lessons!', 'info');
+      window.location.href = `/login?redirect=/courses/${courseId}`;
     } else {
-      showToast('🔒 Access revoked or complete Razorpay payment required to view this lesson!', 'info');
+      showToast('🔒 Enrollment required to view this lesson!', 'info');
       setShowRazorpayModal(true);
     }
   };
 
   const handleEnrollClick = () => {
-    if (isEnrolled || localStorage.getItem(`enrolled_${courseId}`) === 'true') {
+    if (!user) {
+      showToast('🔒 Please sign in to purchase or enroll in this course!', 'info');
+      window.location.href = `/login?redirect=/courses/${courseId}`;
+      return;
+    }
+    if (isEnrolled) {
       showToast('You are enrolled! Accessing lessons...', 'success');
     } else {
       setShowRazorpayModal(true);
@@ -174,9 +182,6 @@ const CourseDetails = () => {
 
   const handlePaymentSuccess = () => {
     setIsEnrolled(true);
-    if (courseId) {
-      localStorage.setItem(`enrolled_${courseId}`, 'true');
-    }
     setShowRazorpayModal(false);
   };
 

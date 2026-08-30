@@ -17,6 +17,8 @@ const Login = () => {
 
   const brandName = siteConfig?.siteName || 'Gaurav';
 
+  const redirectUrl = new URLSearchParams(window.location.search).get('redirect');
+
   useEffect(() => {
     if (window.location.search.includes('expired=1')) {
       setInfoMsg('⏰ Your previous session has expired (1-day limit). Please log in again.');
@@ -26,9 +28,13 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      window.location.href = user.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard';
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        window.location.href = user.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard';
+      }
     }
-  }, [user]);
+  }, [user, redirectUrl]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,7 +58,11 @@ const Login = () => {
           role: userRole || role,
           avatarUrl
         });
-        window.location.href = (userRole || role) === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard';
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+        } else {
+          window.location.href = (userRole || role) === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard';
+        }
       } else {
         setErrorMsg(data.message || 'Invalid email or password. Please verify your credentials.');
       }

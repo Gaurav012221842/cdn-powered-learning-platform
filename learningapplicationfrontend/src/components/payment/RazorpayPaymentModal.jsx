@@ -33,26 +33,99 @@ const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
     document.body.appendChild(script);
   }, []);
 
+  // If user is not logged in, block payment and prompt sign in
+  if (!user) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          padding: '24px'
+        }}
+      >
+        <div
+          className="card"
+          style={{
+            maxWidth: '440px',
+            width: '100%',
+            borderRadius: '24px',
+            padding: '32px',
+            background: 'var(--bg-card)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px',
+            border: '1px solid var(--border-color)'
+          }}
+        >
+          <div style={{ fontSize: '48px' }}>🔒</div>
+          <h3 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+            Authentication Required
+          </h3>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+            You must be logged into your student account to enroll in <strong>{course?.title || 'this masterclass'}</strong>.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+            <a
+              href={`/login?redirect=/courses/${course?.id}`}
+              className="btn btn-primary"
+              style={{ width: '100%', padding: '12px', fontWeight: '700' }}
+            >
+              🔑 Sign In to Your Account
+            </a>
+            <a
+              href={`/register?redirect=/courses/${course?.id}`}
+              className="btn btn-secondary"
+              style={{ width: '100%', padding: '12px', fontWeight: '700' }}
+            >
+              ✨ Create Free Account
+            </a>
+            <button
+              onClick={onClose}
+              className="btn btn-outline"
+              style={{ width: '100%', padding: '10px', fontSize: '13px' }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Complete enrollment in backend
   const completeEnrollmentInBackend = async (orderId, paymentId, signature) => {
     const studentId = user?.id || '';
     const userEmail = user?.email || '';
+    const token = localStorage.getItem('token');
+    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
     // Step 1: Verify payment in Spring Boot
     const verifyUrl = `${API_V1_URL}/payments/verify?razorpayOrderId=${orderId}&razorpayPaymentId=${paymentId}&signature=${signature}&courseId=${course?.id}&amount=${priceUsd.toFixed(2)}${studentId ? `&userId=${studentId}` : ''}${userEmail ? `&userEmail=${encodeURIComponent(userEmail)}` : ''}`;
-    const verifyRes = await fetch(verifyUrl, { method: 'POST' });
+    const verifyRes = await fetch(verifyUrl, { method: 'POST', headers: authHeaders });
     if (!verifyRes.ok) {
       throw new Error(`Server payment verification error: ${verifyRes.status}`);
     }
 
     // Step 2: Register student enrollment in PostgreSQL database
     const enrollUrl = `${API_V1_URL}/enrollments?courseId=${course?.id}${studentId ? `&studentId=${studentId}` : ''}${userEmail ? `&studentEmail=${encodeURIComponent(userEmail)}` : ''}`;
-    const enrollRes = await fetch(enrollUrl, { method: 'POST' });
+    const enrollRes = await fetch(enrollUrl, { method: 'POST', headers: authHeaders });
     if (!enrollRes.ok) {
       throw new Error(`Server enrollment creation error: ${enrollRes.status}`);
     }
 
-    showToast(`🎉 Payment Verified! Enrolled ${userEmail || 'Student'} in ${course?.title}`, 'success');
+    showToast(`🎉 Payment Verified! Enrolled ${userEmail} in ${course?.title}`, 'success');
     if (onSuccess) onSuccess();
   };
 
@@ -64,10 +137,12 @@ const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
     try {
       const studentId = user?.id || '';
       const userEmail = user?.email || '';
+      const token = localStorage.getItem('token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
       // Initiate Order in Spring Boot
       const initiateUrl = `${API_V1_URL}/payments/initiate?courseId=${course?.id}&amount=${priceUsd.toFixed(2)}${studentId ? `&userId=${studentId}` : ''}${userEmail ? `&userEmail=${encodeURIComponent(userEmail)}` : ''}`;
-      const initiateRes = await fetch(initiateUrl, { method: 'POST' });
+      const initiateRes = await fetch(initiateUrl, { method: 'POST', headers: authHeaders });
       let realOrderId = `rzp_order_${Date.now()}`;
       if (initiateRes.ok) {
         const initiateData = await initiateRes.json();
@@ -128,25 +203,11 @@ const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
         });
         rzp.open();
       } else {
-        await handleInstantTestCheckout(realOrderId);
+        throw new Error('Razorpay SDK not loaded. Please refresh the page.');
       }
     } catch (err) {
       console.error('Razorpay Error:', err);
       showToast(`❌ Payment Error: ${err.message}`, 'error');
-      setLoading(false);
-    }
-  };
-
-  // Instant Test Verification helper
-  const handleInstantTestCheckout = async (orderId) => {
-    try {
-      const realOrderId = orderId || `rzp_order_${Date.now()}`;
-      const paymentId = `pay_${Math.random().toString(36).substring(2, 12)}`;
-      const signature = `sig_${Math.random().toString(36).substring(2, 14)}`;
-      await completeEnrollmentInBackend(realOrderId, paymentId, signature);
-    } catch (err) {
-      showToast(`❌ Test Payment Failed: ${err.message}`, 'error');
-    } finally {
       setLoading(false);
     }
   };
@@ -206,7 +267,7 @@ const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
 
         {/* User Account Info */}
         <div style={{ fontSize: '13px', background: 'var(--primary-light)', padding: '10px 14px', borderRadius: '10px', color: 'var(--primary)', fontWeight: '700' }}>
-          👤 Enrolling as: <span style={{ color: 'var(--text-primary)' }}>{user?.fullName || user?.email || 'Logged In Student'} ({user?.email || 'student@example.com'})</span>
+          👤 Enrolling as: <span style={{ color: 'var(--text-primary)' }}>{user?.fullName || user?.email} ({user?.email})</span>
         </div>
 
         {/* Course Summary Box */}
@@ -247,7 +308,7 @@ const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Button */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <button
             onClick={handleLaunchOfficialRazorpay}
@@ -263,20 +324,6 @@ const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
             }}
           >
             {loading ? '🔄 Opening Official Razorpay Window...' : `🚀 Open Official Razorpay Window (Cards, UPI, Netbanking)`}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleInstantTestCheckout(null)}
-            disabled={loading}
-            className="btn btn-secondary"
-            style={{
-              padding: '10px',
-              fontSize: '13px',
-              fontWeight: '700'
-            }}
-          >
-            ⚡ Instant Test Verification (Skip Window)
           </button>
         </div>
 
