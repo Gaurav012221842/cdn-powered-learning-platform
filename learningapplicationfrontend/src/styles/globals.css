@@ -130,7 +130,7 @@ textarea {
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 99999;
 }
 
 /* Inputs & Forms */
@@ -313,15 +313,15 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--bg-nav);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  padding: 20px;
+  height: calc(100vh - 72px);
+  background: var(--bg-primary);
+  padding: 24px 20px;
   flex-direction: column;
   gap: 16px;
-  z-index: 999;
+  z-index: 99999;
   border-top: 1px solid var(--border-color);
   overflow-y: auto;
+  box-shadow: var(--shadow-xl);
   animation: fadeIn 0.2s ease-out forwards;
 }
 
