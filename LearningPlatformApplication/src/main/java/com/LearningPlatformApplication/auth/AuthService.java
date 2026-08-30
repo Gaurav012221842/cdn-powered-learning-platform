@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,9 +16,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -30,14 +33,36 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenBlacklistService tokenBlacklistService;
     private final EmailService emailService;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    @org.springframework.beans.factory.annotation.Value("${app.security.master-admin-email:serversidegaurav@gmail.com}")
+    private String masterAdminEmail;
+
+    public boolean isMasterAdmin(String email) {
+        if (email == null || masterAdminEmail == null) return false;
+        return email.trim().equalsIgnoreCase(masterAdminEmail.trim());
+    }
 
     // In-memory OTP code cache for password resets with 15-minute expiration
     private final Map<String, ResetCodeInfo> resetCodeStore = new ConcurrentHashMap<>();
+
+    // In-memory OTP code cache for pending user registrations
+    private final Map<String, RegistrationOtpInfo> registrationOtpStore = new ConcurrentHashMap<>();
 
     @Data
     @AllArgsConstructor
     private static class ResetCodeInfo {
         private String code;
+        private ZonedDateTime expiresAt;
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class RegistrationOtpInfo {
+        private String code;
+        private String password;
+        private String fullName;
+        private String role;
         private ZonedDateTime expiresAt;
     }
 
@@ -54,12 +79,14 @@ public class AuthService {
         // Enforce strong password policy: Uppercase, Lowercase, Number, Symbol, 8+ chars
         PasswordValidator.validate(request.getPassword());
 
+        String assignedRole = resolveRegistrationRole(email);
+
         User user = User.builder()
                 .id(UUID.randomUUID())
                 .email(email)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
-                .role(request.getRole() != null ? request.getRole() : "STUDENT")
+                .role(assignedRole)
                 .build();
 
         userRepository.save(user);
@@ -91,6 +118,11 @@ public class AuthService {
         );
         User user = userRepository.findByEmail(request.getEmail().trim())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (isMasterAdmin(user.getEmail()) && !"ADMIN".equalsIgnoreCase(user.getRole())) {
+            user.setRole("ADMIN");
+            user = userRepository.save(user);
+        }
 
         org.springframework.security.core.userdetails.User userDetails =
                 new org.springframework.security.core.userdetails.User(
@@ -209,5 +241,165 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         log.info("Password changed successfully for user {}", email);
+    }
+
+    public void sendRegistrationOtp(SendRegistrationOtpRequest request) {
+        if (request == null || request.getEmail() == null || request.getPassword() == null) {
+            throw new IllegalArgumentException("Email and password are required");
+        }
+
+        String email = request.getEmail().trim().toLowerCase();
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("User already exists with email: " + email + ". Please sign in instead.");
+        }
+
+        // Validate password strength policy
+        PasswordValidator.validate(request.getPassword());
+
+        String otpCode = String.format("%06d", new Random().nextInt(900000) + 100000);
+        ZonedDateTime expiresAt = ZonedDateTime.now().plusMinutes(15);
+
+        // Store OTP in Redis with 15-minute automatic TTL expiration
+        try {
+            stringRedisTemplate.opsForValue().set("otp:reg:" + email, otpCode, 15, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.warn("Redis OTP save warning: {}", e.getMessage());
+        }
+
+        registrationOtpStore.put(email, new RegistrationOtpInfo(
+                otpCode,
+                request.getPassword(),
+                request.getFullName() != null ? request.getFullName() : "Gaurav User",
+                request.getRole() != null ? request.getRole() : "STUDENT",
+                expiresAt
+        ));
+
+        emailService.sendRegistrationOtpEmail(email, otpCode);
+        log.info("Registration OTP {} generated, saved to Redis, and email dispatched for {}", otpCode, email);
+    }
+
+    public AuthResponse verifyRegistrationOtpAndRegister(VerifyRegistrationOtpRequest request) {
+        if (request == null || request.getEmail() == null || request.getOtpCode() == null) {
+            throw new IllegalArgumentException("Email and verification code are required");
+        }
+
+        String email = request.getEmail().trim().toLowerCase();
+        RegistrationOtpInfo info = registrationOtpStore.get(email);
+
+        if (info == null) {
+            throw new IllegalArgumentException("No pending registration found for " + email + ". Please request a new verification code.");
+        }
+
+        if (ZonedDateTime.now().isAfter(info.getExpiresAt())) {
+            registrationOtpStore.remove(email);
+            throw new IllegalArgumentException("Verification code has expired. Please request a new code.");
+        }
+
+        if (!info.getCode().equals(request.getOtpCode().trim())) {
+            throw new IllegalArgumentException("Invalid verification code. Please check your email.");
+        }
+
+        // Clear verified OTP
+        registrationOtpStore.remove(email);
+
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("User already exists with this email.");
+        }
+
+        String rawPassword = request.getPassword() != null ? request.getPassword() : info.getPassword();
+        String fullName = request.getFullName() != null && !request.getFullName().isBlank() ? request.getFullName() : info.getFullName();
+        String assignedRole = resolveRegistrationRole(email);
+
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .email(email)
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .fullName(fullName)
+                .role(assignedRole)
+                .build();
+
+        userRepository.save(user);
+        log.info("User {} verified via OTP and created successfully in PostgreSQL as {}", email, assignedRole);
+
+        org.springframework.security.core.userdetails.User userDetails =
+                new org.springframework.security.core.userdetails.User(
+                        user.getEmail(),
+                        user.getPasswordHash(),
+                        java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                );
+        String jwtToken = jwtService.generateToken(userDetails);
+
+        return AuthResponse.builder()
+                .id(user.getId())
+                .token(jwtToken)
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(user.getRole())
+                .avatarUrl(user.getAvatarUrl())
+                .build();
+    }
+
+    public AuthResponse googleLogin(GoogleLoginRequest request) {
+        if (request == null || request.getEmail() == null) {
+            throw new IllegalArgumentException("Email is required for Google login");
+        }
+
+        String email = request.getEmail().trim().toLowerCase();
+        boolean isRegisterFlow = Boolean.TRUE.equals(request.getIsRegister());
+
+        Optional<User> existingUserOpt = userRepository.findByEmail(email);
+
+        if (!isRegisterFlow && existingUserOpt.isEmpty()) {
+            throw new IllegalArgumentException("No registered account found with email: " + email + ". Please register your account first!");
+        }
+
+        User user = existingUserOpt.orElseGet(() -> {
+            String assignedRole = resolveRegistrationRole(email);
+            log.info("Registering new user via Google OAuth for email {} as {}", email, assignedRole);
+            User newUser = User.builder()
+                    .id(UUID.randomUUID())
+                    .email(email)
+                    .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .fullName(request.getFullName() != null ? request.getFullName() : "Google User")
+                    .role(assignedRole)
+                    .avatarUrl(request.getAvatarUrl())
+                    .build();
+            return userRepository.save(newUser);
+        });
+
+        if (isMasterAdmin(user.getEmail()) && !"ADMIN".equalsIgnoreCase(user.getRole())) {
+            user.setRole("ADMIN");
+            user = userRepository.save(user);
+        }
+
+        // Update avatar if not present
+        if ((user.getAvatarUrl() == null || user.getAvatarUrl().isBlank()) && request.getAvatarUrl() != null) {
+            user.setAvatarUrl(request.getAvatarUrl());
+            userRepository.save(user);
+        }
+
+        org.springframework.security.core.userdetails.User userDetails =
+                new org.springframework.security.core.userdetails.User(
+                        user.getEmail(),
+                        user.getPasswordHash(),
+                        java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                );
+        String jwtToken = jwtService.generateToken(userDetails);
+
+        return AuthResponse.builder()
+                .id(user.getId())
+                .token(jwtToken)
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(user.getRole())
+                .avatarUrl(user.getAvatarUrl())
+                .build();
+    }
+
+    private String resolveRegistrationRole(String email) {
+        if (isMasterAdmin(email)) {
+            return "ADMIN";
+        }
+        return "STUDENT";
     }
 }

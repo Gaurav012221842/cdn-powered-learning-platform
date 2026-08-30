@@ -18,6 +18,8 @@ import AdminDashboard from '../pages/admin/Dashboard';
 import MediaLibrary from '../pages/admin/media/MediaLibrary';
 import UploadMedia from '../pages/admin/media/UploadMedia';
 import CreateCourse from '../pages/admin/course/CreateCourse';
+import CourseManagement from '../pages/admin/courses/CourseManagement';
+import UserManagement from '../pages/admin/users/UserManagement';
 import AdminEnrollments from '../pages/admin/enrollment/AdminEnrollments';
 import CampaignManagement from '../pages/admin/campaigns/CampaignManagement';
 import CreateCampaign from '../pages/admin/campaigns/CreateCampaign';
@@ -28,6 +30,10 @@ export const renderRoute = (path) => {
 
   if (cleanPath.startsWith('/courses/') && cleanPath !== '/courses') {
     return <CourseDetails />;
+  }
+
+  if (cleanPath.startsWith('/admin/course/edit') || cleanPath.startsWith('/admin/courses/edit')) {
+    return <ProtectedRoute requireRole="ADMIN"><CreateCourse /></ProtectedRoute>;
   }
 
   switch (cleanPath) {
@@ -62,6 +68,9 @@ export const renderRoute = (path) => {
     case '/admin':
     case '/admin/dashboard':
       return <ProtectedRoute requireRole="ADMIN"><AdminDashboard /></ProtectedRoute>;
+    case '/admin/courses':
+    case '/admin/course/manage':
+      return <ProtectedRoute requireRole="ADMIN"><CourseManagement /></ProtectedRoute>;
     case '/admin/media':
       return <ProtectedRoute requireRole="ADMIN"><MediaLibrary /></ProtectedRoute>;
     case '/admin/media/upload':
@@ -79,6 +88,10 @@ export const renderRoute = (path) => {
       return <ProtectedRoute requireRole="ADMIN"><CreateCampaign /></ProtectedRoute>;
     case '/admin/campaigns/edit':
       return <ProtectedRoute requireRole="ADMIN"><EditCampaign /></ProtectedRoute>;
+    case '/admin/users':
+    case '/admin/team':
+    case '/admin/students':
+      return <ProtectedRoute requireRole="ADMIN"><UserManagement /></ProtectedRoute>;
 
     default:
       return <Home />;

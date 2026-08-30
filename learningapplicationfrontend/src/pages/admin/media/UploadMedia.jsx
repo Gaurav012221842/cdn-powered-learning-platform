@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../../components/layout/Navbar';
 import Footer from '../../../components/layout/Footer';
 import DirectR2Uploader from '../../../components/media/DirectR2Uploader';
+import ResumableVideoUploader from '../../../components/video/ResumableVideoUploader';
 import { API_V1_URL, R2_CDN_URL } from '../../../services/api';
 
 const UploadMedia = () => {
   const [selectedMediaType, setSelectedMediaType] = useState('VIDEO');
   const [uploadedList, setUploadedList] = useState([]);
+  const [dateSortOrder, setDateSortOrder] = useState('desc'); // 'desc' = Newest first, 'asc' = Oldest first
 
   useEffect(() => {
     fetch(`${API_V1_URL}/media`)
@@ -19,7 +21,8 @@ const UploadMedia = () => {
             type: item.mediaType || 'ASSET',
             cdnUrl: `${R2_CDN_URL}/${item.objectKey}`,
             size: item.fileSize ? (item.fileSize / (1024 * 1024)).toFixed(2) + ' MB' : 'Live CDN',
-            date: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Active'
+            date: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Active',
+            timestamp: item.createdAt ? new Date(item.createdAt).getTime() : 0
           }));
           setUploadedList(formatted);
         }
@@ -44,10 +47,36 @@ const UploadMedia = () => {
         type: newAsset.type,
         cdnUrl: newAsset.cdnUrl,
         size: newAsset.size,
-        date: newAsset.uploadedAt || 'Just now'
+        date: newAsset.uploadedAt || new Date().toLocaleDateString(),
+        timestamp: Date.now()
       },
       ...prev
     ]);
+  };
+
+  const handleDeleteAsset = async (assetId, filename) => {
+    const confirmDelete = window.confirm(
+      `🗑️ Are you sure you want to permanently delete "${filename || 'this asset'}" from storage?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_V1_URL}/media/${assetId}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` })
+        }
+      });
+
+      if (!res.ok && res.status !== 404) {
+        throw new Error('Failed to delete media asset from backend');
+      }
+
+      setUploadedList((prev) => prev.filter((item) => item.id !== assetId));
+    } catch (err) {
+      alert(err.message || 'Error deleting media asset.');
+    }
   };
 
   return (
@@ -100,11 +129,15 @@ const UploadMedia = () => {
             ))}
           </div>
 
-          {/* Direct R2 Uploader Component */}
-          <DirectR2Uploader
-            mediaType={selectedMediaType}
-            onUploadComplete={handleUploadComplete}
-          />
+          {/* Video Resumable Multipart Uploader or Direct Asset Uploader */}
+          {selectedMediaType === 'VIDEO' ? (
+            <ResumableVideoUploader onUploadSuccess={handleUploadComplete} />
+          ) : (
+            <DirectR2Uploader
+              mediaType={selectedMediaType}
+              onUploadComplete={handleUploadComplete}
+            />
+          )}
 
           {/* Recent Uploads Table */}
           <div className="card">
@@ -112,18 +145,38 @@ const UploadMedia = () => {
               Recently Uploaded Media Assets ({uploadedList.length})
             </h3>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                    <th style={{ padding: '12px' }}>File Name</th>
-                    <th style={{ padding: '12px' }}>Type</th>
-                    <th style={{ padding: '12px' }}>Size</th>
-                    <th style={{ padding: '12px' }}>Date</th>
-                    <th style={{ padding: '12px', textAlign: 'right' }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {uploadedList.map((asset) => (
+              {(() => {
+                const sortedList = [...uploadedList].sort((a, b) => {
+                  const timeA = a.timestamp || 0;
+                  const timeB = b.timestamp || 0;
+                  return dateSortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+                });
+
+                return (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                        <th style={{ padding: '12px' }}>File Name</th>
+                        <th style={{ padding: '12px' }}>Type</th>
+                        <th style={{ padding: '12px' }}>Size</th>
+                        <th
+                          style={{ padding: '12px', cursor: 'pointer', userSelect: 'none' }}
+                          onClick={() => setDateSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                          title="Click to sort Newest / Oldest"
+                        >
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <span>Date</span>
+                            <span style={{ display: 'inline-flex', flexDirection: 'column', fontSize: '9px', lineHeight: '8px', marginLeft: '2px' }}>
+                              <span style={{ color: dateSortOrder === 'asc' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 'bold' }}>▲</span>
+                              <span style={{ color: dateSortOrder === 'desc' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 'bold' }}>▼</span>
+                            </span>
+                          </span>
+                        </th>
+                        <th style={{ padding: '12px', textAlign: 'center' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedList.map((asset) => (
                     <tr key={asset.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>
                         {asset.filename}
@@ -135,21 +188,51 @@ const UploadMedia = () => {
                       </td>
                       <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>{asset.size}</td>
                       <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{asset.date}</td>
-                      <td style={{ padding: '12px', textAlign: 'right' }}>
-                        <a
-                          href={asset.cdnUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn btn-secondary"
-                          style={{ padding: '4px 12px', fontSize: '12px' }}
-                        >
-                          View / Stream ↗
-                        </a>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                          <a
+                            href={asset.cdnUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-secondary"
+                            style={{ padding: '4px 12px', fontSize: '12px' }}
+                          >
+                            View / Stream ↗
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAsset(asset.id, asset.filename)}
+                            title="Delete Asset"
+                            style={{
+                              padding: '6px 10px',
+                              fontSize: '14px',
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              color: '#ef4444',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#ef4444';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
+                                  </tbody>
+                  </table>
+                );
+              })()}
             </div>
           </div>
         </div>

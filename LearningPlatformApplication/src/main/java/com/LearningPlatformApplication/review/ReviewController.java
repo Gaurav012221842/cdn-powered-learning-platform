@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -20,6 +21,11 @@ public class ReviewController {
         return ResponseEntity.ok(ApiResponse.success("Reviews retrieved", reviewService.getCourseReviews(courseId)));
     }
 
+    @GetMapping("/course/{courseId}/summary")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getRatingSummary(@PathVariable UUID courseId) {
+        return ResponseEntity.ok(ApiResponse.success("Rating summary retrieved", reviewService.getCourseRatingSummary(courseId)));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<CourseReview>> addReview(
             @RequestParam UUID studentId,
@@ -28,5 +34,11 @@ public class ReviewController {
             @RequestParam(required = false) String comment
     ) {
         return ResponseEntity.ok(ApiResponse.success("Review submitted", reviewService.addReview(studentId, courseId, rating, comment)));
+    }
+
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<ApiResponse<String>> deleteReview(@PathVariable UUID reviewId) {
+        reviewService.deleteReview(reviewId);
+        return ResponseEntity.ok(ApiResponse.success("Review deleted successfully", "SUCCESS"));
     }
 }

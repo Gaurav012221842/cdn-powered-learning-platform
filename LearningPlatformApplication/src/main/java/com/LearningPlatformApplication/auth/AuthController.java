@@ -51,6 +51,24 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully", "SUCCESS"));
     }
 
+    @PostMapping("/send-registration-otp")
+    public ResponseEntity<ApiResponse<String>> sendRegistrationOtp(@RequestBody SendRegistrationOtpRequest request) {
+        authService.sendRegistrationOtp(request);
+        return ResponseEntity.ok(ApiResponse.success("Verification code sent to your email.", "SUCCESS"));
+    }
+
+    @PostMapping("/verify-registration-otp")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyRegistrationOtpAndRegister(@RequestBody VerifyRegistrationOtpRequest request) {
+        AuthResponse response = authService.verifyRegistrationOtpAndRegister(request);
+        return ResponseEntity.ok(ApiResponse.success("Account registered and verified successfully!", response));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@RequestBody GoogleLoginRequest request) {
+        AuthResponse response = authService.googleLogin(request);
+        return ResponseEntity.ok(ApiResponse.success("Google authentication successful!", response));
+    }
+
     @GetMapping("/validate")
     public ResponseEntity<ApiResponse<AuthResponse>> validateToken(@RequestHeader("Authorization") String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {

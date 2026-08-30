@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface WishlistRepository extends JpaRepository<Wishlist, UUID> {
     List<Wishlist> findByStudentId(UUID studentId);
     Optional<Wishlist> findByStudentIdAndCourseId(UUID studentId, UUID courseId);
+    void deleteByStudentIdAndCourseId(UUID studentId, UUID courseId);
 }

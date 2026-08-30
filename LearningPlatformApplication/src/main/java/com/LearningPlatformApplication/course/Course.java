@@ -33,11 +33,17 @@ public class Course {
     @Column(nullable = false)
     private String status;
 
+    @Column
+    private String category;
+
     @Column(name = "access_type", nullable = false)
     private String accessType;
 
     @Column(name = "thumbnail_media_id")
     private UUID thumbnailMediaId;
+
+    @Column(name = "thumbnail_url")
+    private String thumbnailUrl;
 
     @Column(name = "created_at")
     private ZonedDateTime createdAt;

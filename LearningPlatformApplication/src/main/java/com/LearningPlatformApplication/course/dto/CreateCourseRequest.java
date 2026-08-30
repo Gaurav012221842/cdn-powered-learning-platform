@@ -10,6 +10,7 @@ import java.util.UUID;
 public class CreateCourseRequest {
     private String title;
     private String description;
+    private String category;
     private UUID instructorId;
     private BigDecimal price;
     private String thumbnailUrl;

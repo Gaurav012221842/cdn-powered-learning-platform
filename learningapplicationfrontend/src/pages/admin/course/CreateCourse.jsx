@@ -1,12 +1,21 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Navbar from '../../../components/layout/Navbar';
 import Footer from '../../../components/layout/Footer';
 import DirectR2Uploader from '../../../components/media/DirectR2Uploader';
+import QuizBuilder from '../../../components/quiz/QuizBuilder';
 import { AuthContext } from '../../../context/AuthContext';
 import { API_V1_URL } from '../../../services/api';
 
 const CreateCourse = () => {
   const { showToast } = useContext(AuthContext);
+
+  // Check if we are in Edit Mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const pathParts = window.location.pathname.split('/');
+  const editIdFromPath = window.location.pathname.includes('/course/edit/') || window.location.pathname.includes('/courses/edit/')
+    ? pathParts[pathParts.length - 1]
+    : null;
+  const editCourseId = urlParams.get('editId') || urlParams.get('id') || (editIdFromPath && editIdFromPath !== 'edit' ? editIdFromPath : null);
 
   const [courseTitle, setCourseTitle] = useState('');
   const [courseDescription, setCourseDescription] = useState('');
@@ -42,7 +51,62 @@ const CreateCourse = () => {
   ]);
 
   const [loading, setLoading] = useState(false);
+  const [fetchingDetails, setFetchingDetails] = useState(!!editCourseId);
   const [createdCourseId, setCreatedCourseId] = useState(null);
+
+  // Load existing course if in edit mode
+  useEffect(() => {
+    if (!editCourseId) return;
+
+    setFetchingDetails(true);
+    fetch(`${API_V1_URL}/courses/${editCourseId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.data) {
+          const c = data.data;
+          setCourseTitle(c.title || '');
+          setCourseDescription(c.description || '');
+          setCategory(c.category || 'Fullstack Development');
+          setPrice(String(c.price !== undefined ? c.price : '49.99'));
+          setCoverThumbnailUrl(c.thumbnailUrl || '');
+
+          if (c.chapters && Array.isArray(c.chapters) && c.chapters.length > 0) {
+            setChapters(
+              c.chapters.map((ch, chIdx) => ({
+                id: ch.id ? String(ch.id) : String(Date.now() + chIdx),
+                title: ch.title || `Chapter ${chIdx + 1}`,
+                lessons: (ch.lessons && ch.lessons.length > 0)
+                  ? ch.lessons.map((les, lIdx) => ({
+                      id: les.id ? String(les.id) : String(Date.now() + chIdx * 100 + lIdx),
+                      title: les.title || `Lesson ${lIdx + 1}`,
+                      lessonType: les.lessonType || 'VIDEO',
+                      contentUrl: les.contentUrl || '',
+                      videoThumbnailUrl: les.videoThumbnailUrl || '',
+                      quizData: les.quizData || ''
+                    }))
+                  : [
+                      {
+                        id: String(Date.now() + chIdx * 100),
+                        title: 'Lesson 1: Introduction',
+                        lessonType: 'VIDEO',
+                        contentUrl: '',
+                        videoThumbnailUrl: '',
+                        quizData: ''
+                      }
+                    ]
+              }))
+            );
+          }
+        } else {
+          showToast('Could not load course details for editing', 'error');
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching course for edit:', err);
+        showToast('Error loading course details', 'error');
+      })
+      .finally(() => setFetchingDetails(false));
+  }, [editCourseId]);
 
   // Chapter Handlers
   const addChapter = () => {
@@ -140,29 +204,35 @@ const CreateCourse = () => {
 
     try {
       const formattedChapters = chapters.map((c, cIdx) => ({
+        id: c.id && c.id.length > 20 ? c.id : undefined,
         title: c.title,
         sequenceOrder: cIdx + 1,
         lessons: c.lessons.map((l, lIdx) => ({
+          id: l.id && l.id.length > 20 ? l.id : undefined,
           title: l.title,
           lessonType: l.lessonType,
           contentUrl: l.contentUrl,
           videoThumbnailUrl: l.videoThumbnailUrl,
           quizData: l.quizData,
-          sequenceOrder: l.lIdx + 1
+          sequenceOrder: lIdx + 1
         }))
       }));
 
       const payload = {
         title: courseTitle,
         description: courseDescription,
+        category: category,
         price: parseFloat(price) || 0,
         thumbnailUrl: coverThumbnailUrl,
         chapters: formattedChapters
       };
 
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_V1_URL}/courses`, {
-        method: 'POST',
+      const endpoint = editCourseId ? `${API_V1_URL}/courses/${editCourseId}` : `${API_V1_URL}/courses`;
+      const method = editCourseId ? 'PUT' : 'POST';
+
+      const res = await fetch(endpoint, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
@@ -173,13 +243,18 @@ const CreateCourse = () => {
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.success) {
-        showToast('🎉 Course with Chapters, Videos & Quizzes created successfully!', 'success');
-        setCreatedCourseId(data.data?.id);
+        if (editCourseId) {
+          showToast('🎉 Course and curriculums updated successfully!', 'success');
+          setCreatedCourseId(editCourseId);
+        } else {
+          showToast('🎉 Course with Chapters, Videos & Quizzes created successfully!', 'success');
+          setCreatedCourseId(data.data?.id);
+        }
       } else {
-        showToast(data.message || 'Failed to create course', 'error');
+        showToast(data.message || 'Failed to save course', 'error');
       }
     } catch (err) {
-      showToast('Connection error creating course', 'error');
+      showToast('Connection error saving course', 'error');
     } finally {
       setLoading(false);
     }
@@ -195,18 +270,29 @@ const CreateCourse = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
               <span className="badge badge-primary" style={{ marginBottom: '8px' }}>
-                🎓 Admin Course Architect
+                {editCourseId ? '✏️ Course Editor & Curriculum Manager' : '🎓 Admin Course Architect'}
               </span>
-              <h1 style={{ fontSize: '30px', fontWeight: '800', color: 'var(--text-primary)' }}>
-                Create New Course Curriculum
+              <h1 style={{ fontSize: '32px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                {editCourseId ? `Edit Course: ${courseTitle || 'Loading...'}` : 'Create New Masterclass & Curriculums'}
               </h1>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-                Organize chapters, videos with thumbnails, PDFs, images, and interactive quizzes.
+              <p style={{ color: 'var(--text-secondary)', marginTop: '6px', fontSize: '15px' }}>
+                {editCourseId
+                  ? 'Modify course details, categories, pricing, video lectures, PDFs, images, and quizzes.'
+                  : 'Design structured chapters, assign Cloudflare R2 video streams, embed PDFs, and attach quizzes.'}
               </p>
             </div>
-            <a href="/admin/dashboard" className="btn btn-secondary">
-              ← Back to Admin Dashboard
-            </a>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <a href="/admin/courses" className="btn btn-secondary" style={{ fontWeight: '700' }}>
+                📋 All Courses
+              </a>
+              <a href="/admin/media" className="btn btn-secondary" style={{ fontWeight: '700' }}>
+                📁 Media Library
+              </a>
+              <a href="/admin/dashboard" className="btn btn-secondary" style={{ fontWeight: '700' }}>
+                ← Dashboard
+              </a>
+            </div>
           </div>
 
           {createdCourseId && (
@@ -448,15 +534,10 @@ const CreateCourse = () => {
                         )}
 
                         {les.lessonType === 'QUIZ' && (
-                          <div>
-                            <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>Quiz Data JSON (Questions & Answers)</label>
-                            <textarea
-                              rows={2}
-                              className="form-input"
-                              style={{ fontSize: '12px', fontFamily: 'monospace', marginTop: '4px' }}
-                              placeholder='{"questions": [{"question": "Q1 text?", "options": ["A", "B", "C", "D"], "correctIndex": 0}]}'
-                              value={les.quizData}
-                              onChange={(e) => updateLessonField(cIdx, lIdx, 'quizData', e.target.value)}
+                          <div style={{ marginTop: '8px' }}>
+                            <QuizBuilder
+                              quizData={les.quizData}
+                              onChange={(newJson) => updateLessonField(cIdx, lIdx, 'quizData', newJson)}
                             />
                           </div>
                         )}
@@ -483,7 +564,9 @@ const CreateCourse = () => {
               style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: '800' }}
               disabled={loading}
             >
-              {loading ? 'Publishing Course Curriculum...' : '🚀 Publish Complete Course'}
+              {editCourseId
+                ? (loading ? 'Saving Changes...' : '💾 Save & Update Course')
+                : (loading ? 'Publishing Course Curriculum...' : '🚀 Publish Complete Course')}
             </button>
           </form>
 

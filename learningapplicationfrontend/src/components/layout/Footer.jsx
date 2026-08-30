@@ -1,10 +1,15 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
+import { SOCIAL_LINKS } from '../../constants/socialLinks';
 
 const Footer = () => {
   const { siteConfig } = useContext(AuthContext);
   const brandName = siteConfig?.siteName || 'Gaurav';
   const year = new Date().getFullYear();
+
+  const telegramUrl = SOCIAL_LINKS.TELEGRAM;
+  const instagramUrl = SOCIAL_LINKS.INSTAGRAM;
+  const facebookUrl = SOCIAL_LINKS.FACEBOOK;
 
   return (
     <footer
@@ -71,13 +76,65 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Col 4: Contact */}
+        {/* Col 4: Contact & Community */}
         <div>
-          <h4 style={{ color: 'var(--text-primary)', marginBottom: '14px', fontSize: '15px' }}>Support</h4>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            📩 {siteConfig?.supportEmail || 'support@gauravlearn.com'}
+          <h4 style={{ color: 'var(--text-primary)', marginBottom: '14px', fontSize: '15px' }}>Contact & Community</h4>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+            📩 {siteConfig?.supportEmail || 'serversidegaurav@gmail.com'}
           </p>
-          <span className="badge badge-success">⚡ Platform Status: Online</span>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+            <a
+              href={telegramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#38bdf8',
+                fontSize: '13px',
+                fontWeight: '600',
+                textDecoration: 'none'
+              }}
+            >
+              <span>✈️</span> Telegram Channel
+            </a>
+
+            <a
+              href={instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#ec4899',
+                fontSize: '13px',
+                fontWeight: '600',
+                textDecoration: 'none'
+              }}
+            >
+              <span>📸</span> Instagram Profile
+            </a>
+
+            <a
+              href={facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#3b82f6',
+                fontSize: '13px',
+                fontWeight: '600',
+                textDecoration: 'none'
+              }}
+            >
+              <span>📘</span> Facebook Page
+            </a>
+          </div>
         </div>
       </div>
 

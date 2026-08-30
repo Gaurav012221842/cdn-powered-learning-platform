@@ -46,4 +46,18 @@ public class UserController {
         User updatedUser = userService.updateProfile(authentication.getName(), request);
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", updatedUser));
     }
+
+    @PutMapping("/{id}/role")
+    public ResponseEntity<ApiResponse<User>> updateUserRole(
+            Authentication authentication,
+            @PathVariable UUID id,
+            @RequestBody java.util.Map<String, String> body
+    ) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized: Please log in as Master Admin."));
+        }
+        String role = body.get("role");
+        User updated = userService.updateUserRole(authentication.getName(), id, role);
+        return ResponseEntity.ok(ApiResponse.success("User role updated successfully", updated));
+    }
 }

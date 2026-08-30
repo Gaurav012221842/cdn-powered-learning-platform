@@ -3,6 +3,8 @@ package com.LearningPlatformApplication.lesson;
 import com.LearningPlatformApplication.lesson.dto.CreateLessonRequest;
 import com.LearningPlatformApplication.lesson.dto.LessonResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,12 +17,14 @@ public class LessonService {
 
     private final LessonRepository lessonRepository;
 
+    @Cacheable(value = "course_lessons", key = "#courseId")
     public List<LessonResponse> getLessonsByCourse(UUID courseId) {
         return lessonRepository.findByCourseIdOrderBySequenceOrderAsc(courseId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = {"course_lessons", "course_details", "courses_all"}, allEntries = true)
     public LessonResponse createLesson(CreateLessonRequest request) {
         Lesson lesson = Lesson.builder()
                 .courseId(request.getCourseId())

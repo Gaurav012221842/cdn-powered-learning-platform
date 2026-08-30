@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { apiFetch } from '../services/api';
+import { apiFetch, isJwtExpired, clearAuthSession, getStoredUser } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -12,22 +12,26 @@ export const AuthProvider = ({ children }) => {
     siteName: 'Gaurav',
     platformTitle: "Gaurav's CDN Learning Platform",
     owner: 'Gaurav',
-    supportEmail: 'support@gauravlearn.com',
+    supportEmail: 'serversidegaurav@gmail.com',
     defaultTheme: 'light',
     version: '1.0.0'
   });
 
-  // User auth state
-  const [user, setUser] = useState(() => {
-    try {
-      const savedUser = localStorage.getItem('user');
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch {
+  // User auth state with 24-hour expiration check
+  const [user, setUser] = useState(() => getStoredUser());
+
+  const [token, setToken] = useState(() => {
+    const rawToken = localStorage.getItem('token');
+    const loginTime = localStorage.getItem('loginTimestamp');
+    const MAX_SESSION_MS = 24 * 60 * 60 * 1000; // 24 Hours / 1 Day
+
+    if (!rawToken || isJwtExpired(rawToken) || (loginTime && Date.now() - Number(loginTime) > MAX_SESSION_MS)) {
+      clearAuthSession();
       return null;
     }
+    return rawToken;
   });
 
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [toast, setToast] = useState(null);
 
   const showToast = useCallback((message, type = 'info') => {
@@ -35,6 +39,41 @@ export const AuthProvider = ({ children }) => {
     setTimeout(() => {
       setToast((current) => (current?.message === message ? null : current));
     }, 4000);
+  }, []);
+
+  // Validate active token against backend on startup
+  useEffect(() => {
+    const currentToken = localStorage.getItem('token');
+    if (currentToken) {
+      if (isJwtExpired(currentToken)) {
+        clearAuthSession();
+        setToken(null);
+        setUser(null);
+        return;
+      }
+
+      // Verify token with backend
+      apiFetch('/users/me')
+        .then((res) => {
+          if (res?.data) {
+            const freshUser = {
+              id: res.data.id,
+              fullName: res.data.fullName,
+              email: res.data.email,
+              role: res.data.role,
+              avatarUrl: res.data.avatarUrl
+            };
+            setUser(freshUser);
+            localStorage.setItem('user', JSON.stringify(freshUser));
+          }
+        })
+        .catch((err) => {
+          console.warn('Session expired or unauthorized, clearing local session:', err);
+          clearAuthSession();
+          setToken(null);
+          setUser(null);
+        });
+    }
   }, []);
 
   // Sync theme attribute on document root
@@ -76,6 +115,7 @@ export const AuthProvider = ({ children }) => {
     };
     localStorage.setItem('token', authToken);
     localStorage.setItem('user', JSON.stringify(formattedUser));
+    localStorage.setItem('loginTimestamp', String(Date.now()));
     setToken(authToken);
     setUser(formattedUser);
     showToast(`Welcome back, ${formattedUser.fullName}!`, 'success');
@@ -90,13 +130,14 @@ export const AuthProvider = ({ children }) => {
     showToast('Profile photo updated successfully!', 'success');
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const logout = (silent = false) => {
+    clearAuthSession();
     setToken(null);
     setUser(null);
-    showToast('You have been logged out successfully.', 'info');
-    window.location.href = '/';
+    if (!silent) {
+      showToast('You have been logged out successfully.', 'info');
+      window.location.href = '/login';
+    }
   };
 
   const forgotPassword = async (email) => {
@@ -147,6 +188,70 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const sendRegistrationOtp = async (email, password, fullName, role) => {
+    try {
+      const data = await apiFetch('/auth/send-registration-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, fullName, role })
+      });
+      if (data?.success) {
+        showToast('📧 Verification code sent to your email!', 'success');
+        return { success: true };
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to send verification code.', 'error');
+      return { success: false, error: err.message };
+    }
+  };
+
+  const verifyRegistrationOtp = async (email, otpCode, password, fullName, role) => {
+    try {
+      const data = await apiFetch('/auth/verify-registration-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email, otpCode, password, fullName, role })
+      });
+      if (data?.success && data.data?.token) {
+        const { token: userToken, role: userRole, avatarUrl, id } = data.data;
+        login(userToken, {
+          id,
+          email,
+          fullName: fullName || data.data.fullName || 'User',
+          role: userRole || role || 'STUDENT',
+          avatarUrl: avatarUrl || data.data.avatarUrl
+        });
+        showToast('🎉 Account registered and verified successfully!', 'success');
+        return { success: true, data: data.data };
+      }
+    } catch (err) {
+      showToast(err.message || 'Verification failed. Please check your OTP code.', 'error');
+      return { success: false, error: err.message };
+    }
+  };
+
+  const googleLogin = async (googlePayload) => {
+    try {
+      const data = await apiFetch('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify(googlePayload)
+      });
+      if (data?.success && data.data?.token) {
+        const { token: userToken, role: userRole, avatarUrl, fullName, email, id } = data.data;
+        login(userToken, {
+          id,
+          email,
+          fullName,
+          role: userRole || 'STUDENT',
+          avatarUrl
+        });
+        showToast(`🌐 Welcome, ${fullName || 'User'}! Authenticated via Google.`, 'success');
+        return { success: true, data: data.data };
+      }
+    } catch (err) {
+      showToast(err.message || 'Google authentication failed.', 'error');
+      return { success: false, error: err.message };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -162,6 +267,9 @@ export const AuthProvider = ({ children }) => {
         forgotPassword,
         resetPassword,
         changePassword,
+        sendRegistrationOtp,
+        verifyRegistrationOtp,
+        googleLogin,
         showToast
       }}
     >

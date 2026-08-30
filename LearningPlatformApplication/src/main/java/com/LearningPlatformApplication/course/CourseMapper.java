@@ -20,6 +20,8 @@ public class CourseMapper {
                 .instructorId(course.getInstructorId())
                 .price(course.getPrice())
                 .status(course.getStatus())
+                .category(course.getCategory())
+                .thumbnailUrl(course.getThumbnailUrl())
                 .createdAt(course.getCreatedAt())
                 .chapters(course.getChapters() == null ? java.util.Collections.emptyList() :
                         course.getChapters().stream().map(this::toChapterDTO).collect(Collectors.toList()))
@@ -47,8 +49,30 @@ public class CourseMapper {
                 .lessonType(lesson.getLessonType())
                 .contentUrl(lesson.getContentUrl())
                 .videoThumbnailUrl(lesson.getVideoThumbnailUrl())
-                .quizData(lesson.getQuizData())
+                .quizData(sanitizeQuizData(lesson.getQuizData()))
                 .sequenceOrder(lesson.getSequenceOrder())
                 .build();
+    }
+
+    private String sanitizeQuizData(String rawQuizData) {
+        if (rawQuizData == null || rawQuizData.trim().isEmpty()) {
+            return rawQuizData;
+        }
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode rootNode = mapper.readTree(rawQuizData);
+            if (rootNode.has("questions") && rootNode.get("questions").isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode qNode : rootNode.get("questions")) {
+                    if (qNode instanceof com.fasterxml.jackson.databind.node.ObjectNode) {
+                        com.fasterxml.jackson.databind.node.ObjectNode obj = (com.fasterxml.jackson.databind.node.ObjectNode) qNode;
+                        obj.remove("correctIndex");
+                        obj.remove("explanation");
+                    }
+                }
+            }
+            return mapper.writeValueAsString(rootNode);
+        } catch (Exception e) {
+            return rawQuizData;
+        }
     }
 }

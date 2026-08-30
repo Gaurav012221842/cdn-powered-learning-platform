@@ -16,7 +16,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username:support@gauravlearn.com}")
+    @Value("${spring.mail.username:serversidegaurav@gmail.com}")
     private String fromEmail;
 
     @Async
@@ -57,6 +57,41 @@ public class EmailService {
             log.info("Password reset email sent successfully via JavaMailSender to {}", toEmail);
         } catch (Exception e) {
             log.warn("Failed to send password reset email via JavaMailSender to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendRegistrationOtpEmail(String toEmail, String otpCode) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("📧 Registration Verification Code - Gaurav's Learning Platform");
+
+            String htmlContent = "<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;\">"
+                    + "<div style=\"text-align: center; margin-bottom: 24px;\">"
+                    + "<h2 style=\"color: #4f46e5; margin: 0; font-size: 24px;\">Gaurav's Learning Platform</h2>"
+                    + "<p style=\"color: #64748b; font-size: 14px; margin-top: 4px;\">Account Registration Verification</p>"
+                    + "</div>"
+                    + "<div style=\"background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;\">"
+                    + "<p style=\"font-size: 15px; color: #334155; line-height: 1.6;\">Thank you for creating an account! Please enter the 6-digit verification code below to verify your email address and complete registration:</p>"
+                    + "<div style=\"margin: 20px 0; padding: 14px; background: #f1f5f9; border-radius: 12px; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #4f46e5; font-family: monospace;\">"
+                    + otpCode
+                    + "</div>"
+                    + "<p style=\"font-size: 13px; color: #94a3b8;\">This verification code is valid for <strong>15 minutes</strong>. If you did not initiate this request, please ignore this email.</p>"
+                    + "</div>"
+                    + "<div style=\"text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8;\">"
+                    + "&copy; 2026 Gaurav's Learning Platform. All rights reserved."
+                    + "</div>"
+                    + "</div>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            log.info("Registration OTP email sent successfully via JavaMailSender to {}", toEmail);
+        } catch (Exception e) {
+            log.warn("Failed to send registration OTP email via JavaMailSender to {}: {}", toEmail, e.getMessage());
         }
     }
 }

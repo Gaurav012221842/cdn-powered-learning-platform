@@ -4,15 +4,24 @@ import Footer from '../../components/layout/Footer';
 import { AuthContext } from '../../context/AuthContext';
 import { API_V1_URL, API_BASE_URL } from '../../services/api';
 
+import GoogleLoginButton from '../../components/common/GoogleLoginButton';
+
 const Login = () => {
   const [email, setEmail] = useState('student@gauravlearn.com');
   const [password, setPassword] = useState('password123');
   const [role, setRole] = useState('STUDENT');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [infoMsg, setInfoMsg] = useState('');
   const { user, login, siteConfig } = useContext(AuthContext);
 
   const brandName = siteConfig?.siteName || 'Gaurav';
+
+  useEffect(() => {
+    if (window.location.search.includes('expired=1')) {
+      setInfoMsg('⏰ Your previous session has expired (1-day limit). Please log in again.');
+    }
+  }, []);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -100,6 +109,23 @@ const Login = () => {
               </p>
             </div>
 
+            {infoMsg && (
+              <div
+                style={{
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  color: 'var(--primary)',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  marginBottom: '16px',
+                  border: '1px solid rgba(99, 102, 241, 0.3)'
+                }}
+              >
+                {infoMsg}
+              </div>
+            )}
+
             {errorMsg && (
               <div
                 style={{
@@ -164,6 +190,14 @@ const Login = () => {
               >
                 ⚡ Admin Demo
               </button>
+            </div>
+
+            <GoogleLoginButton label="Sign in with Google" role={role} isRegister={false} />
+
+            <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0', gap: '10px' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>OR SIGN IN WITH EMAIL</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

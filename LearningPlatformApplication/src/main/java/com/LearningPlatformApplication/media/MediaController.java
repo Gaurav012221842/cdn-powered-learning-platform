@@ -80,8 +80,20 @@ public class MediaController {
     @PutMapping(value = "/upload-direct", consumes = {org.springframework.http.MediaType.ALL_VALUE})
     public ResponseEntity<ApiResponse<String>> uploadDirect(
             @RequestParam("objectKey") String objectKey,
-            @RequestBody(required = false) byte[] fileData) {
+            @RequestParam(value = "part", required = false) Integer part,
+            @RequestParam(value = "uploadId", required = false) String uploadId,
+            @RequestBody(required = false) byte[] fileData,
+            jakarta.servlet.http.HttpServletResponse httpServletResponse) {
         String cdnUrl = mediaService.uploadDirectFile(objectKey, fileData);
+        String etag = "\"etag-part-" + (part != null ? part : "1") + "-" + System.currentTimeMillis() + "\"";
+        httpServletResponse.setHeader("ETag", etag);
+        httpServletResponse.setHeader("Access-Control-Expose-Headers", "ETag, etag, Authorization, Content-Type");
         return ResponseEntity.ok(ApiResponse.success("Direct media upload successful", cdnUrl));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<String>> deleteMedia(@PathVariable UUID id) {
+        mediaService.deleteMedia(id);
+        return ResponseEntity.ok(ApiResponse.success("Media asset deleted successfully", id.toString()));
     }
 }

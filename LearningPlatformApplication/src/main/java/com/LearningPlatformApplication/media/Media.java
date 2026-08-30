@@ -17,10 +17,10 @@ public class Media {
     @Id
     private UUID id;
 
-    @Column(name = "original_filename", nullable = false)
+    @Column(name = "original_filename", columnDefinition = "TEXT", nullable = false)
     private String originalFilename;
 
-    @Column(name = "object_key", nullable = false)
+    @Column(name = "object_key", columnDefinition = "TEXT", nullable = false)
     private String objectKey;
 
     @Enumerated(EnumType.STRING)

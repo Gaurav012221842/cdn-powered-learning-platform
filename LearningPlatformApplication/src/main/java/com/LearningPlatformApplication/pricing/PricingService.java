@@ -1,6 +1,8 @@
 package com.LearningPlatformApplication.pricing;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -12,6 +14,7 @@ public class PricingService {
 
     private final PricingRepository pricingRepository;
 
+    @Cacheable(value = "course_pricing", key = "#courseId")
     public CoursePricing getPricingByCourseId(UUID courseId) {
         return pricingRepository.findByCourseId(courseId)
                 .orElseGet(() -> CoursePricing.builder()
@@ -21,6 +24,7 @@ public class PricingService {
                         .build());
     }
 
+    @CacheEvict(value = "course_pricing", key = "#courseId")
     public CoursePricing setCoursePricing(UUID courseId, BigDecimal basePrice, BigDecimal discountPrice) {
         CoursePricing pricing = pricingRepository.findByCourseId(courseId)
                 .orElse(CoursePricing.builder().courseId(courseId).build());

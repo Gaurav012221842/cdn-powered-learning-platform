@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.File;
@@ -43,7 +44,7 @@ public class MediaService {
     @Value("${cloudflare.r2.cdn-url}")
     private String cdnUrl;
 
-    @Value("${local.uploads-url:http://localhost:8080/uploads}")
+    @Value("${local.uploads-url}")
     private String localUploadsUrl;
 
     public UploadResponse requestUpload(UploadRequest request) {
@@ -234,10 +235,43 @@ public class MediaService {
         return cdnUrl.endsWith("/") ? cdnUrl + objectKey : cdnUrl + "/" + objectKey;
     }
 
+    @org.springframework.cache.annotation.Cacheable(value = "media_all", key = "'all'")
     public java.util.List<Media> getAllMedia() {
         return mediaRepository.findAll();
     }
 
+    @org.springframework.cache.annotation.CacheEvict(value = "media_all", allEntries = true)
+    public void deleteMedia(UUID mediaId) {
+        if (mediaId == null) return;
+        mediaRepository.findById(mediaId).ifPresent(media -> {
+            String objectKey = media.getObjectKey();
+            if (objectKey != null && !objectKey.isBlank()) {
+                // Delete from Cloudflare R2
+                try {
+                    DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                            .bucket(bucketName)
+                            .key(objectKey)
+                            .build();
+                    s3Client.deleteObject(deleteObjectRequest);
+                    log.info("Deleted object from Cloudflare R2 bucket={}: key={}", bucketName, objectKey);
+                } catch (Exception e) {
+                    log.warn("Cloudflare R2 deletion notice: {}", e.getMessage());
+                }
+
+                // Delete local file if present
+                try {
+                    File localFile = new File("uploads/" + objectKey);
+                    if (localFile.exists()) {
+                        localFile.delete();
+                    }
+                } catch (Exception ignored) {}
+            }
+            mediaRepository.delete(media);
+            log.info("Deleted media record with ID: {}", mediaId);
+        });
+    }
+
+    @org.springframework.cache.annotation.CacheEvict(value = "media_all", allEntries = true)
     public UploadResponse uploadFileToCloudflareR2(org.springframework.web.multipart.MultipartFile file, MediaType inputMediaType) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("Upload file is required");

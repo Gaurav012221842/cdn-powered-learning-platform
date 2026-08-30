@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import OfferBanner from '../../components/campaign/OfferBanner';
 import CourseList from '../../components/course/CourseList';
-import { AuthContext } from '../../context/AuthContext';
+import { SOCIAL_LINKS } from '../../constants/socialLinks';
 import { API_V1_URL } from '../../services/api';
 
 const fallbackCourses = [
@@ -40,9 +40,6 @@ const fallbackCourses = [
 ];
 
 const Home = () => {
-  const { siteConfig } = useContext(AuthContext);
-  const brandName = siteConfig?.siteName || 'ServerSide';
-
   const [courses, setCourses] = useState([]);
 
   useEffect(() => {
@@ -58,7 +55,7 @@ const Home = () => {
             instructor: 'Gaurav Kumar',
             rating: 4.9,
             students: 1200,
-            category: c.category || 'Full Stack',
+            category: c.category || 'Fullstack Development',
             thumbnailUrl: c.thumbnailUrl
           }));
           setCourses(formatted);
@@ -71,6 +68,10 @@ const Home = () => {
         setCourses(fallbackCourses);
       });
   }, []);
+
+  const telegramLink = SOCIAL_LINKS.TELEGRAM;
+  const instagramLink = SOCIAL_LINKS.INSTAGRAM;
+  const facebookLink = SOCIAL_LINKS.FACEBOOK;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-primary)' }}>
@@ -121,8 +122,14 @@ const Home = () => {
               <a href="/courses" className="btn btn-primary" style={{ padding: '14px 28px', fontSize: '16px' }}>
                 🚀 Explore Courses
               </a>
-              <a href="/register" className="btn btn-secondary" style={{ padding: '14px 28px', fontSize: '16px' }}>
-                Join Community
+              <a
+                href={telegramLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary"
+                style={{ padding: '14px 28px', fontSize: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              >
+                <span>✈️</span> Join Community
               </a>
             </div>
 
@@ -161,7 +168,7 @@ const Home = () => {
         </section>
 
         {/* Featured Courses Section */}
-        <section className="container" style={{ padding: '48px 24px 64px 24px' }}>
+        <section className="container" style={{ padding: '48px 24px 32px 24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
             <div>
               <span className="badge badge-accent" style={{ marginBottom: '8px' }}>Top Rated</span>
@@ -173,6 +180,147 @@ const Home = () => {
           </div>
 
           <CourseList courses={courses} />
+        </section>
+
+        {/* Community & Social Channels Section */}
+        <section className="container" style={{ padding: '32px 24px 64px 24px' }}>
+          <div
+            className="card"
+            style={{
+              padding: '36px',
+              borderRadius: 'var(--radius-xl)',
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px'
+            }}
+          >
+            <div style={{ textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+              <span className="badge badge-primary" style={{ marginBottom: '10px' }}>
+                🌐 Developer Network
+              </span>
+              <h2 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                Join Our Official Channels & Community
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '8px' }}>
+                Connect directly with mentors and peers, discuss code architectures, and stay updated with new course releases.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+              {/* Telegram Card */}
+              <div
+                style={{
+                  background: 'var(--bg-card)',
+                  padding: '24px',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ fontSize: '32px' }}>✈️</div>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+                  Telegram Channel
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, flex: 1 }}>
+                  Join our main Telegram group for instant course alerts, study notes, live Q&A sessions, and engineer networking.
+                </p>
+                <a
+                  href={telegramLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{
+                    padding: '10px 16px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    textDecoration: 'none'
+                  }}
+                >
+                  Join Telegram Channel ↗
+                </a>
+              </div>
+
+              {/* Instagram Card */}
+              <div
+                style={{
+                  background: 'var(--bg-card)',
+                  padding: '24px',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ fontSize: '32px' }}>📸</div>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+                  Instagram
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, flex: 1 }}>
+                  Follow for daily system design snippets, developer tips, quick tutorial reels, and behind-the-scenes content.
+                </p>
+                <a
+                  href={instagramLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{
+                    padding: '10px 16px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
+                    textDecoration: 'none'
+                  }}
+                >
+                  Follow on Instagram ↗
+                </a>
+              </div>
+
+              {/* Facebook Card */}
+              <div
+                style={{
+                  background: 'var(--bg-card)',
+                  padding: '24px',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ fontSize: '32px' }}>📘</div>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+                  Facebook Page
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, flex: 1 }}>
+                  Like and follow our official Facebook page for platform updates, tech articles, and community discussions.
+                </p>
+                <a
+                  href={facebookLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{
+                    padding: '10px 16px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    textDecoration: 'none'
+                  }}
+                >
+                  Connect on Facebook ↗
+                </a>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
       <Footer />

@@ -57,7 +57,7 @@ const Courses = () => {
             instructor: 'Gaurav Kumar',
             rating: 4.9,
             students: 1200,
-            category: c.category || 'Full Stack',
+            category: c.category || 'Fullstack Development',
             thumbnailUrl: c.thumbnailUrl
           }));
           setCourses(formatted);
@@ -73,7 +73,7 @@ const Courses = () => {
   }, []);
 
   // Dynamically compile categories list from defaults + actual backend courses
-  const baseCategories = ['All', 'Backend', 'Full Stack', 'DevOps & CDN', 'Cloud Infrastructure & CDN', 'DSA', 'AI/ML'];
+  const baseCategories = ['All', 'Fullstack Development', 'Cloud Infrastructure & CDN', 'Backend Engineering', 'DevOps & Microservices', 'DSA', 'AI/ML'];
   const dynamicCategories = Array.from(
     new Set([...baseCategories, ...courses.map((c) => c.category).filter(Boolean)])
   );
@@ -82,7 +82,7 @@ const Courses = () => {
     const matchesSearch =
       (course.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (course.description || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = selectedCategory === 'All' || course.category === selectedCategory;
+    const matchesCat = selectedCategory === 'All' || course.category === selectedCategory || (selectedCategory === 'DSA' && (course.category || '').toUpperCase() === 'DSA');
     return matchesSearch && matchesCat;
   });
 

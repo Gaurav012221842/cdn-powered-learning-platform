@@ -21,7 +21,7 @@ public class PresignedUrlService {
     @Value("${cloudflare.r2.endpoint}")
     private String r2Endpoint;
 
-    @Value("${app.base-url:http://localhost:8080}")
+    @Value("${app.base-url}")
     private String appBaseUrl;
 
     @Value("${cloudflare.r2.cdn-url}")

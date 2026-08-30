@@ -155,13 +155,16 @@ const AdminDashboard = () => {
 
             <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
-                📚 Course Management
+                📚 Course Management & Editor
               </h3>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px', flex: 1, lineHeight: 1.5 }}>
-                Create new course titles, organize chapter curriculums, assign videos, PDFs, images & quizzes.
+                View all courses, edit lectures & quizzes, update categories/prices, and add new curriculum modules.
               </p>
-              <div style={{ marginTop: 'auto' }}>
-                <a href="/admin/course/create" className="btn btn-primary" style={{ width: '100%', padding: '12px', fontWeight: '700' }}>
+              <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <a href="/admin/courses" className="btn btn-primary" style={{ width: '100%', padding: '10px', fontWeight: '700', textAlign: 'center' }}>
+                  📋 Manage & Edit Courses
+                </a>
+                <a href="/admin/course/create" className="btn btn-secondary" style={{ width: '100%', padding: '10px', fontWeight: '700', textAlign: 'center' }}>
                   ➕ Create New Course
                 </a>
               </div>
@@ -197,13 +200,27 @@ const AdminDashboard = () => {
 
             <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                🛡️ User & Team Access Control
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px', flex: 1, lineHeight: 1.5 }}>
+                View all registered accounts, manage student rosters, and grant or revoke Admin permissions.
+              </p>
+              <div style={{ marginTop: 'auto' }}>
+                <a href="/admin/users" className="btn btn-primary" style={{ width: '100%', padding: '12px', fontWeight: '700', textAlign: 'center' }}>
+                  👥 Manage User Roles
+                </a>
+              </div>
+            </div>
+
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
                 📊 Analytics & Streams
               </h3>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px', flex: 1, lineHeight: 1.5 }}>
                 Monitor bandwidth consumption, student enrollment statistics, and revenue.
               </p>
               <div style={{ marginTop: 'auto' }}>
-                <a href="/student/dashboard" className="btn btn-secondary" style={{ width: '100%', padding: '12px', fontWeight: '700' }}>
+                <a href="/student/dashboard" className="btn btn-secondary" style={{ width: '100%', padding: '12px', fontWeight: '700', textAlign: 'center' }}>
                   View System Telemetry
                 </a>
               </div>

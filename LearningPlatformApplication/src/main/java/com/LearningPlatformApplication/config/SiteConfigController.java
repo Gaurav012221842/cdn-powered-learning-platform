@@ -29,6 +29,9 @@ public class SiteConfigController {
     @Value("${site.defaultTheme:light}")
     private String defaultTheme;
 
+    @Value("${site.masterAdminEmail:serversidegaurav@gmail.com}")
+    private String masterAdminEmail;
+
     @GetMapping("/site")
     public ResponseEntity<ApiResponse<Map<String, String>>> getSiteConfig() {
         Map<String, String> config = new HashMap<>();
@@ -36,6 +39,7 @@ public class SiteConfigController {
         config.put("platformTitle", siteTitle);
         config.put("owner", siteOwner);
         config.put("supportEmail", supportEmail);
+        config.put("masterAdminEmail", masterAdminEmail);
         config.put("defaultTheme", defaultTheme);
         config.put("version", "1.0.0");
         return ResponseEntity.ok(ApiResponse.success("Site configuration retrieved", config));

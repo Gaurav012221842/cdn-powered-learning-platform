@@ -37,4 +37,17 @@ public class CourseController {
     public ResponseEntity<ApiResponse<CourseResponse>> updateCourse(@PathVariable UUID id, @RequestBody UpdateCourseRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Course updated", courseService.updateCourse(id, request)));
     }
+
+    @PostMapping("/{id}/quiz/submit")
+    public ResponseEntity<ApiResponse<com.LearningPlatformApplication.course.dto.QuizEvaluationResponse>> submitQuiz(
+            @PathVariable UUID id,
+            @RequestBody com.LearningPlatformApplication.course.dto.QuizSubmissionRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Quiz evaluated successfully", courseService.evaluateQuiz(id, request)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteCourse(@PathVariable UUID id) {
+        courseService.deleteCourse(id);
+        return ResponseEntity.ok(ApiResponse.success("Course deleted successfully", null));
+    }
 }

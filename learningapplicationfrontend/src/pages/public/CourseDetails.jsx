@@ -5,6 +5,7 @@ import SecureVideoPlayer from '../../components/video/SecureVideoPlayer';
 import RazorpayPaymentModal from '../../components/payment/RazorpayPaymentModal';
 import OfferBanner from '../../components/campaign/OfferBanner';
 import CertificateModal from '../../components/certificate/CertificateModal';
+import StudentQuizViewer from '../../components/quiz/StudentQuizViewer';
 import { AuthContext } from '../../context/AuthContext';
 import { API_V1_URL, fetchStudentProgress, toggleLessonProgress } from '../../services/api';
 
@@ -531,68 +532,28 @@ const CourseDetails = () => {
             {activeLesson ? (
               isQuizLesson(activeLesson) ? (
                 /* QUIZ VIEWER */
-                <div className="card" style={{ padding: '28px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                    📝 Knowledge Check & Quiz
-                  </h3>
-                  {activeQuizObj && activeQuizObj.questions && activeQuizObj.questions.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      {activeQuizObj.questions.map((q, qIdx) => (
-                        <div key={qIdx} style={{ background: 'var(--bg-secondary)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
-                          <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>
-                            {qIdx + 1}. {q.question}
-                          </h4>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {q.options && q.options.map((opt, oIdx) => (
-                              <label
-                                key={oIdx}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '10px',
-                                  padding: '10px 14px',
-                                  borderRadius: '10px',
-                                  background: quizAnswers[qIdx] === oIdx ? 'var(--primary-light)' : 'var(--bg-card)',
-                                  border: quizAnswers[qIdx] === oIdx ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                                  cursor: 'pointer',
-                                  fontSize: '14px',
-                                  fontWeight: '600'
-                                }}
-                              >
-                                <input
-                                  type="radio"
-                                  name={`quiz_q_${qIdx}`}
-                                  checked={quizAnswers[qIdx] === oIdx}
-                                  onChange={() => setQuizAnswers({ ...quizAnswers, [qIdx]: oIdx })}
-                                />
-                                {opt}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-
-                      <button
-                        onClick={() => handleQuizSubmit(activeQuizObj.questions)}
-                        className="btn btn-primary"
-                        style={{ padding: '12px 24px', fontWeight: '800', fontSize: '14px', alignSelf: 'flex-start', borderRadius: '12px' }}
-                      >
-                        🚀 Submit Quiz Answers
-                      </button>
-
-                      {quizScore && (
-                        <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderRadius: '12px', fontWeight: '800', fontSize: '15px' }}>
-                          🎉 Quiz Score: {quizScore.score} / {quizScore.total} Correct (
-                          {Math.round((quizScore.score / quizScore.total) * 100)}%)
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{ padding: '20px', color: 'var(--text-muted)' }}>
-                      Quiz data loading or empty.
-                    </div>
-                  )}
-                </div>
+                <StudentQuizViewer
+                  key={activeLesson?.id || activeLesson?.title}
+                  courseId={course?.id}
+                  lessonId={activeLesson?.id}
+                  quizData={activeLesson?.quizData}
+                  onComplete={(isPassed, pct, score, total) => {
+                    if (showToast) {
+                      showToast(
+                        isPassed
+                          ? `🎉 Quiz Passed! ${score}/${total} Correct (${pct}%)`
+                          : `⚠️ Quiz Submitted. ${score}/${total} Correct (${pct}%). Review explanations below!`,
+                        isPassed ? 'success' : 'info'
+                      );
+                    }
+                    if (activeLesson && activeLesson.id) {
+                      const stringLessonId = String(activeLesson.id);
+                      if (!completedLessons.includes(stringLessonId)) {
+                        handleToggleLessonComplete(activeLesson.id);
+                      }
+                    }
+                  }}
+                />
               ) : isPdfLesson(activeLesson) ? (
                 /* PDF VIEWER */
                 <div className="card" style={{ padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>

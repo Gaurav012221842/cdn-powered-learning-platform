@@ -44,8 +44,15 @@ spring:
     redis:
       host: ${SPRING_REDIS_HOST:localhost}
       port: ${SPRING_REDIS_PORT:6379}
+      username: ${SPRING_REDIS_USERNAME:}
+      password: ${SPRING_REDIS_PASSWORD:}
+      ssl:
+        enabled: ${SPRING_REDIS_SSL_ENABLED:false}
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
     admin:
       auto-create: true
       fail-fast: false
@@ -60,8 +67,14 @@ site:
   name: Gaurav
   title: Gaurav's CDN Learning Platform
   owner: Gaurav
-  supportEmail: support@gauravlearn.com
+  supportEmail: serversidegaurav@gmail.com
+  masterAdminEmail: ${MASTER_ADMIN_EMAIL:serversidegaurav@gmail.com}
   defaultTheme: light
+
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}
+  security:
+    master-admin-email: ${MASTER_ADMIN_EMAIL:serversidegaurav@gmail.com}
 
 jwt:
   secret: ${JWT_SECRET:default_jwt_secret_key_for_development_environment_only}
@@ -79,11 +92,8 @@ razorpay:
   key-id: ${RAZORPAY_KEY_ID:rzp_test_mockkey123}
   key-secret: ${RAZORPAY_KEY_SECRET:mocksecret123}
 
-app:
-  base-url: ${APP_BASE_URL:http://localhost:8080}
-
 local:
-  uploads-url: ${LOCAL_UPLOADS_URL:http://localhost:8080/uploads}
+  uploads-url: ${LOCAL_UPLOADS_URL}
 
 management:
   endpoints:

@@ -34,19 +34,23 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/api/v1/auth/login",
-                    "/api/v1/auth/register",
-                    "/api/v1/auth/forgot-password",
-                    "/api/v1/auth/reset-password",
-                    "/api/v1/auth/change-password",
+                    "/api/v1/auth/**",
                     "/api/v1/courses/**",
                     "/api/v1/payments/**",
                     "/api/v1/enrollments/**",
                     "/api/v1/progress/**",
                     "/api/v1/campaigns/**",
                     "/api/v1/wishlist/**",
+                    "/api/v1/wishlists/**",
                     "/api/v1/media/**",
+                    "/api/v1/redis/**",
                     "/api/v1/config/**",
+                    "/api/v1/analytics/**",
+                    "/api/v1/coupons/**",
+                    "/api/v1/pricing/**",
+                    "/api/v1/reviews/**",
+                    "/api/v1/users/**",
+                    "/api/admin/videos/**",
                     "/actuator/**"
                 ).permitAll()
                 .anyRequest().authenticated()
@@ -62,6 +66,7 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization", "Content-Disposition", "ETag", "etag", "*"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
