@@ -184,6 +184,13 @@ const StudentQuizViewer = ({ quizData, courseId, lessonId, onComplete }) => {
         </div>
       </div>
 
+      {/* Submission Error Banner */}
+      {submitError && (
+        <div style={{ padding: '12px 16px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', fontSize: '13px' }}>
+          ⚠️ {submitError}
+        </div>
+      )}
+
       {/* POST-SUBMISSION SCORE & EVALUATION HEADER */}
       {isSubmitted && quizResult && (
         <div

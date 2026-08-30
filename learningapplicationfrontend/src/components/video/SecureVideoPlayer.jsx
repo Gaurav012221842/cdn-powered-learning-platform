@@ -169,7 +169,7 @@ const SecureVideoPlayer = ({
         >
           {/* Minimal Live Connected Green Dot Indicator */}
           <div
-            title="Stream Connected (Adaptive HLS)"
+            title={`Stream Connected (Adaptive HLS) • Speed: ${stats.bandwidth}`}
             style={{
               background: 'rgba(0, 0, 0, 0.65)',
               backdropFilter: 'blur(6px)',

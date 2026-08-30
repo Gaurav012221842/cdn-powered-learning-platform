@@ -106,6 +106,7 @@ const CreateCourse = () => {
         showToast('Error loading course details', 'error');
       })
       .finally(() => setFetchingDetails(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editCourseId]);
 
   // Chapter Handlers
@@ -273,7 +274,7 @@ const CreateCourse = () => {
                 {editCourseId ? '✏️ Course Editor & Curriculum Manager' : '🎓 Admin Course Architect'}
               </span>
               <h1 style={{ fontSize: '32px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
-                {editCourseId ? `Edit Course: ${courseTitle || 'Loading...'}` : 'Create New Masterclass & Curriculums'}
+                {fetchingDetails ? '⏳ Loading Course Details...' : (editCourseId ? `Edit Course: ${courseTitle}` : 'Create New Masterclass & Curriculums')}
               </h1>
               <p style={{ color: 'var(--text-secondary)', marginTop: '6px', fontSize: '15px' }}>
                 {editCourseId
