@@ -9,7 +9,7 @@ spring:
       max-file-size: ${MAX_FILE_SIZE:2GB}
       max-request-size: ${MAX_REQUEST_SIZE:2GB}
   mail:
-    host: ${SPRING_MAIL_HOST:smtp-relay.brevo.com}
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
     port: ${SPRING_MAIL_PORT:587}
     username: ${SPRING_MAIL_USERNAME:}
     password: ${SPRING_MAIL_PASSWORD:}
@@ -17,12 +17,15 @@ spring:
       mail:
         smtp:
           auth: true
-          starttls:
-            enable: true
-            required: true
           connectiontimeout: 10000
           timeout: 10000
           writetimeout: 10000
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: "*"
+            enable: ${SPRING_MAIL_SSL_ENABLE:false}
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
@@ -84,6 +87,7 @@ site:
 
 app:
   base-url: ${APP_BASE_URL:${RENDER_EXTERNAL_URL:http://localhost:8080}}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
   security:
     master-admin-email: ${MASTER_ADMIN_EMAIL:serversidegaurav@gmail.com}
 

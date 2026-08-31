@@ -9,6 +9,9 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -19,21 +22,28 @@ public class EmailService {
     @Value("${spring.mail.username:serversidegaurav@gmail.com}")
     private String fromEmail;
 
+    @Value("${site.title:Gaurav's CDN Learning Platform}")
+    private String siteTitle;
+
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
     @Async
     public void sendPasswordResetEmail(String toEmail, String otpCode) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail);
+            helper.setFrom(fromEmail, siteTitle);
             helper.setTo(toEmail);
-            helper.setSubject("🔐 Password Reset Verification Code - Gaurav's Learning Platform");
+            helper.setSubject("🔐 Password Reset Verification Code - " + siteTitle);
 
-            String resetUrl = "http://localhost:3000/reset-password?email=" + java.net.URLEncoder.encode(toEmail, java.nio.charset.StandardCharsets.UTF_8) + "&token=" + otpCode;
+            String cleanFrontendUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+            String resetUrl = cleanFrontendUrl + "/reset-password?email=" + URLEncoder.encode(toEmail, StandardCharsets.UTF_8) + "&token=" + otpCode;
 
             String htmlContent = "<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;\">"
                     + "<div style=\"text-align: center; margin-bottom: 24px;\">"
-                    + "<h2 style=\"color: #4f46e5; margin: 0; font-size: 24px;\">Gaurav's CDN Learning Platform</h2>"
+                    + "<h2 style=\"color: #4f46e5; margin: 0; font-size: 24px;\">" + siteTitle + "</h2>"
                     + "<p style=\"color: #64748b; font-size: 14px; margin-top: 4px;\">Secure Account Recovery</p>"
                     + "</div>"
                     + "<div style=\"background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;\">"
@@ -48,7 +58,7 @@ public class EmailService {
                     + "<p style=\"font-size: 13px; color: #94a3b8;\">This link and code are valid for <strong>15 minutes</strong>. If you did not request a password reset, please ignore this email.</p>"
                     + "</div>"
                     + "<div style=\"text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8;\">"
-                    + "&copy; 2026 Gaurav's Learning Platform. All rights reserved."
+                    + "&copy; 2026 " + siteTitle + ". All rights reserved."
                     + "</div>"
                     + "</div>";
 
@@ -56,7 +66,7 @@ public class EmailService {
             mailSender.send(message);
             log.info("Password reset email sent successfully via JavaMailSender to {}", toEmail);
         } catch (Exception e) {
-            log.warn("Failed to send password reset email via JavaMailSender to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send password reset email via JavaMailSender to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 
@@ -66,13 +76,13 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail);
+            helper.setFrom(fromEmail, siteTitle);
             helper.setTo(toEmail);
-            helper.setSubject("📧 Registration Verification Code - Gaurav's Learning Platform");
+            helper.setSubject("📧 Registration Verification Code - " + siteTitle);
 
             String htmlContent = "<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;\">"
                     + "<div style=\"text-align: center; margin-bottom: 24px;\">"
-                    + "<h2 style=\"color: #4f46e5; margin: 0; font-size: 24px;\">Gaurav's Learning Platform</h2>"
+                    + "<h2 style=\"color: #4f46e5; margin: 0; font-size: 24px;\">" + siteTitle + "</h2>"
                     + "<p style=\"color: #64748b; font-size: 14px; margin-top: 4px;\">Account Registration Verification</p>"
                     + "</div>"
                     + "<div style=\"background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;\">"
@@ -83,7 +93,7 @@ public class EmailService {
                     + "<p style=\"font-size: 13px; color: #94a3b8;\">This verification code is valid for <strong>15 minutes</strong>. If you did not initiate this request, please ignore this email.</p>"
                     + "</div>"
                     + "<div style=\"text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8;\">"
-                    + "&copy; 2026 Gaurav's Learning Platform. All rights reserved."
+                    + "&copy; 2026 " + siteTitle + ". All rights reserved."
                     + "</div>"
                     + "</div>";
 
@@ -91,7 +101,7 @@ public class EmailService {
             mailSender.send(message);
             log.info("Registration OTP email sent successfully via JavaMailSender to {}", toEmail);
         } catch (Exception e) {
-            log.warn("Failed to send registration OTP email via JavaMailSender to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send registration OTP email via JavaMailSender to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 }
