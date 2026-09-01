@@ -9,27 +9,19 @@ spring:
       max-file-size: ${MAX_FILE_SIZE:2GB}
       max-request-size: ${MAX_REQUEST_SIZE:2GB}
   mail:
-    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
-    port: ${SPRING_MAIL_PORT:465}
-    username: ${SPRING_MAIL_USERNAME:}
-    password: ${SPRING_MAIL_PASSWORD:}
+    host: ${SPRING_MAIL_HOST:${MAIL_HOST:smtp.gmail.com}}
+    port: ${SPRING_MAIL_PORT:${MAIL_PORT:587}}
+    username: ${SPRING_MAIL_USERNAME:${MAIL_USERNAME:}}
+    password: ${SPRING_MAIL_PASSWORD:${MAIL_PASSWORD:}}
     properties:
       mail:
         smtp:
           auth: true
-          connectiontimeout: 10000
-          timeout: 10000
-          writetimeout: 10000
-          ssl:
-            enable: ${SPRING_MAIL_SSL_ENABLE:true}
-            trust: "*"
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
           starttls:
-            enable: ${SPRING_MAIL_STARTTLS_ENABLE:false}
-            required: ${SPRING_MAIL_STARTTLS_REQUIRED:false}
-          socketFactory:
-            port: ${SPRING_MAIL_PORT:465}
-            class: javax.net.ssl.SSLSocketFactory
-            fallback: false
+            enable: true
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration

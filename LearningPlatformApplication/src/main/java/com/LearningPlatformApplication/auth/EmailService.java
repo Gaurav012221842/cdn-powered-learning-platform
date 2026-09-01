@@ -19,7 +19,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username:serversidegaurav@gmail.com}")
+    @Value("${spring.mail.username:${mail.username:${MAIL_USERNAME:Gaurav94174@gmail.com}}}")
     private String fromEmail;
 
     @Value("${site.title:Gaurav's CDN Learning Platform}")
