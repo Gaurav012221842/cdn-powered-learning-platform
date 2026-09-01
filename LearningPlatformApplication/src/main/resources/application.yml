@@ -103,9 +103,10 @@ razorpay:
   key-id: ${RAZORPAY_KEY_ID:rzp_test_mockkey123}
   key-secret: ${RAZORPAY_KEY_SECRET:mocksecret123}
 
-resend:
-  api-key: ${RESEND_API_KEY:}
-  from-email: ${RESEND_FROM_EMAIL:onboarding@resend.dev}
+brevo:
+  api-key: ${BREVO_API_KEY:}
+  sender-email: ${BREVO_SENDER_EMAIL:${SPRING_MAIL_USERNAME:serversidegaurav@gmail.com}}
+  sender-name: ${BREVO_SENDER_NAME:${site.title:Gaurav's CDN Learning Platform}}
 
 local:
   uploads-url: ${LOCAL_UPLOADS_URL:}

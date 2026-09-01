@@ -16,6 +16,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -25,20 +27,20 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${spring.mail.username:${mail.username:${MAIL_USERNAME:Gaurav94174@gmail.com}}}")
-    private String fromEmail;
-
     @Value("${site.title:Gaurav's CDN Learning Platform}")
     private String siteTitle;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
 
-    @Value("${resend.api.key:${RESEND_API_KEY:}}")
-    private String resendApiKey;
+    @Value("${brevo.api-key:${BREVO_API_KEY:}}")
+    private String brevoApiKey;
 
-    @Value("${resend.from.email:${RESEND_FROM_EMAIL:onboarding@resend.dev}}")
-    private String resendFromEmail;
+    @Value("${brevo.sender-email:${BREVO_SENDER_EMAIL:${spring.mail.username:${MAIL_USERNAME:serversidegaurav@gmail.com}}}}")
+    private String brevoSenderEmail;
+
+    @Value("${brevo.sender-name:${BREVO_SENDER_NAME:${site.title:Gaurav's CDN Learning Platform}}}")
+    private String brevoSenderName;
 
     @Async
     public void sendPasswordResetEmail(String toEmail, String otpCode) {
@@ -67,8 +69,8 @@ public class EmailService {
                 + "</div>"
                 + "</div>";
 
-        // 1. Try Resend HTTP API (Port 443 HTTPS - completely bypasses cloud SMTP port blocks)
-        if (sendViaResendHttp(toEmail, subject, htmlContent)) {
+        // 1. Send via Brevo HTTPS REST API (Port 443 - Bypasses Render SMTP port blocking)
+        if (sendViaBrevoHttp(toEmail, subject, htmlContent)) {
             return;
         }
 
@@ -97,8 +99,8 @@ public class EmailService {
                 + "</div>"
                 + "</div>";
 
-        // 1. Try Resend HTTP API (Port 443 HTTPS - completely bypasses cloud SMTP port blocks)
-        if (sendViaResendHttp(toEmail, subject, htmlContent)) {
+        // 1. Send via Brevo HTTPS REST API (Port 443 - Bypasses Render SMTP port blocking)
+        if (sendViaBrevoHttp(toEmail, subject, htmlContent)) {
             return;
         }
 
@@ -106,38 +108,39 @@ public class EmailService {
         sendViaSmtp(toEmail, subject, htmlContent);
     }
 
-    private boolean sendViaResendHttp(String toEmail, String subject, String htmlContent) {
-        if (resendApiKey == null || resendApiKey.isBlank()) {
+    private boolean sendViaBrevoHttp(String toEmail, String subject, String htmlContent) {
+        if (brevoApiKey == null || brevoApiKey.isBlank()) {
             return false;
         }
         try {
-            String jsonPayload = String.format(
-                    "{\"from\":\"%s <%s>\",\"to\":[\"%s\"],\"subject\":%s,\"html\":%s}",
-                    siteTitle,
-                    resendFromEmail,
-                    toEmail,
-                    objectMapper.writeValueAsString(subject),
-                    objectMapper.writeValueAsString(htmlContent)
+            Map<String, Object> payloadMap = Map.of(
+                    "sender", Map.of("name", brevoSenderName, "email", brevoSenderEmail),
+                    "to", List.of(Map.of("email", toEmail)),
+                    "subject", subject,
+                    "htmlContent", htmlContent
             );
+
+            String jsonPayload = objectMapper.writeValueAsString(payloadMap);
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.resend.com/emails"))
-                    .header("Authorization", "Bearer " + resendApiKey.trim())
+                    .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                    .header("api-key", brevoApiKey.trim())
                     .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                log.info("Email [{}] sent successfully via Resend HTTPS API (Port 443) to {}", subject, toEmail);
+                log.info("Email [{}] sent successfully via Brevo HTTPS REST API (Port 443) to {}", subject, toEmail);
                 return true;
             } else {
-                log.warn("Resend API returned status {}: {}", response.statusCode(), response.body());
+                log.warn("Brevo API returned status {}: {}", response.statusCode(), response.body());
                 return false;
             }
         } catch (Exception e) {
-            log.warn("Failed to send via Resend HTTPS API: {}", e.getMessage());
+            log.warn("Failed to send via Brevo HTTPS API: {}", e.getMessage());
             return false;
         }
     }
@@ -147,7 +150,7 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail, siteTitle);
+            helper.setFrom(brevoSenderEmail, siteTitle);
             helper.setTo(toEmail);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
