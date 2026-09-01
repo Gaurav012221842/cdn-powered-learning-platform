@@ -94,22 +94,9 @@ const Login = () => {
           padding: '48px 24px'
         }}
       >
-        <div
-          className="card animate-fade-in"
-          style={{
-            width: '100%',
-            maxWidth: '900px',
-            borderRadius: '24px',
-            padding: 0,
-            overflow: 'hidden',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            boxShadow: 'var(--shadow-xl)',
-            margin: '0 auto'
-          }}
-        >
+        <div className="card auth-card-grid animate-fade-in">
           {/* LEFT COLUMN: LOGIN FORM */}
-          <div style={{ padding: '36px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div className="auth-form-side">
             <div style={{ marginBottom: '20px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px' }}>
                 Welcome to {brandName}
@@ -262,19 +249,7 @@ const Login = () => {
           </div>
 
           {/* RIGHT COLUMN: BRANDING & MOTIVATIONAL BANNER */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
-              color: '#ffffff',
-              padding: '40px 36px',
-              display: 'flex',
-              flexDirection: 'column',
-              justify: 'center',
-              alignItems: 'center',
-              textAlign: 'center',
-              position: 'relative'
-            }}
-          >
+          <div className="auth-banner-side">
             {/* Logo Image */}
             <div style={{ position: 'relative', marginBottom: '18px' }}>
               <img
