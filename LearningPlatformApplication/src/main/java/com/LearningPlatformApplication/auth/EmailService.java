@@ -1,5 +1,6 @@
 package com.LearningPlatformApplication.auth;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +10,11 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 @Service
@@ -18,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${spring.mail.username:${mail.username:${MAIL_USERNAME:Gaurav94174@gmail.com}}}")
     private String fromEmail;
@@ -28,80 +34,128 @@ public class EmailService {
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
 
+    @Value("${resend.api.key:${RESEND_API_KEY:}}")
+    private String resendApiKey;
+
+    @Value("${resend.from.email:${RESEND_FROM_EMAIL:onboarding@resend.dev}}")
+    private String resendFromEmail;
+
     @Async
     public void sendPasswordResetEmail(String toEmail, String otpCode) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        String cleanFrontendUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+        String resetUrl = cleanFrontendUrl + "/reset-password?email=" + URLEncoder.encode(toEmail, StandardCharsets.UTF_8) + "&token=" + otpCode;
+        String subject = "🔐 Password Reset Verification Code - " + siteTitle;
 
-            helper.setFrom(fromEmail, siteTitle);
-            helper.setTo(toEmail);
-            helper.setSubject("🔐 Password Reset Verification Code - " + siteTitle);
+        String htmlContent = "<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;\">"
+                + "<div style=\"text-align: center; margin-bottom: 24px;\">"
+                + "<h2 style=\"color: #4f46e5; margin: 0; font-size: 24px;\">" + siteTitle + "</h2>"
+                + "<p style=\"color: #64748b; font-size: 14px; margin-top: 4px;\">Secure Account Recovery</p>"
+                + "</div>"
+                + "<div style=\"background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;\">"
+                + "<p style=\"font-size: 15px; color: #334155; line-height: 1.6;\">You requested a password reset for your account. Click the button below to reset your password directly, or copy the 6-digit code:</p>"
+                + "<div style=\"margin: 20px 0;\">"
+                + "<a href=\"" + resetUrl + "\" style=\"background: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 800; font-size: 14px; display: inline-block;\">🔗 Reset Password Now</a>"
+                + "</div>"
+                + "<p style=\"font-size: 13px; color: #64748b; margin-top: 16px;\">Or enter this code manually on the reset page:</p>"
+                + "<div style=\"margin: 16px 0; padding: 14px; background: #f1f5f9; border-radius: 12px; font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #4f46e5; font-family: monospace;\">"
+                + otpCode
+                + "</div>"
+                + "<p style=\"font-size: 13px; color: #94a3b8;\">This link and code are valid for <strong>15 minutes</strong>. If you did not request a password reset, please ignore this email.</p>"
+                + "</div>"
+                + "<div style=\"text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8;\">"
+                + "&copy; 2026 " + siteTitle + ". All rights reserved."
+                + "</div>"
+                + "</div>";
 
-            String cleanFrontendUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
-            String resetUrl = cleanFrontendUrl + "/reset-password?email=" + URLEncoder.encode(toEmail, StandardCharsets.UTF_8) + "&token=" + otpCode;
-
-            String htmlContent = "<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;\">"
-                    + "<div style=\"text-align: center; margin-bottom: 24px;\">"
-                    + "<h2 style=\"color: #4f46e5; margin: 0; font-size: 24px;\">" + siteTitle + "</h2>"
-                    + "<p style=\"color: #64748b; font-size: 14px; margin-top: 4px;\">Secure Account Recovery</p>"
-                    + "</div>"
-                    + "<div style=\"background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;\">"
-                    + "<p style=\"font-size: 15px; color: #334155; line-height: 1.6;\">You requested a password reset for your account. Click the button below to reset your password directly, or copy the 6-digit code:</p>"
-                    + "<div style=\"margin: 20px 0;\">"
-                    + "<a href=\"" + resetUrl + "\" style=\"background: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 800; font-size: 14px; display: inline-block;\">🔗 Reset Password Now</a>"
-                    + "</div>"
-                    + "<p style=\"font-size: 13px; color: #64748b; margin-top: 16px;\">Or enter this code manually on the reset page:</p>"
-                    + "<div style=\"margin: 16px 0; padding: 14px; background: #f1f5f9; border-radius: 12px; font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #4f46e5; font-family: monospace;\">"
-                    + otpCode
-                    + "</div>"
-                    + "<p style=\"font-size: 13px; color: #94a3b8;\">This link and code are valid for <strong>15 minutes</strong>. If you did not request a password reset, please ignore this email.</p>"
-                    + "</div>"
-                    + "<div style=\"text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8;\">"
-                    + "&copy; 2026 " + siteTitle + ". All rights reserved."
-                    + "</div>"
-                    + "</div>";
-
-            helper.setText(htmlContent, true);
-            mailSender.send(message);
-            log.info("Password reset email sent successfully via JavaMailSender to {}", toEmail);
-        } catch (Exception e) {
-            log.error("Failed to send password reset email via JavaMailSender to {}: {}", toEmail, e.getMessage(), e);
+        // 1. Try Resend HTTP API (Port 443 HTTPS - completely bypasses cloud SMTP port blocks)
+        if (sendViaResendHttp(toEmail, subject, htmlContent)) {
+            return;
         }
+
+        // 2. Fallback to JavaMailSender (SMTP)
+        sendViaSmtp(toEmail, subject, htmlContent);
     }
 
     @Async
     public void sendRegistrationOtpEmail(String toEmail, String otpCode) {
+        String subject = "📧 Registration Verification Code - " + siteTitle;
+
+        String htmlContent = "<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;\">"
+                + "<div style=\"text-align: center; margin-bottom: 24px;\">"
+                + "<h2 style=\"color: #4f46e5; margin: 0; font-size: 24px;\">" + siteTitle + "</h2>"
+                + "<p style=\"color: #64748b; font-size: 14px; margin-top: 4px;\">Account Registration Verification</p>"
+                + "</div>"
+                + "<div style=\"background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;\">"
+                + "<p style=\"font-size: 15px; color: #334155; line-height: 1.6;\">Thank you for creating an account! Please enter the 6-digit verification code below to verify your email address and complete registration:</p>"
+                + "<div style=\"margin: 20px 0; padding: 14px; background: #f1f5f9; border-radius: 12px; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #4f46e5; font-family: monospace;\">"
+                + otpCode
+                + "</div>"
+                + "<p style=\"font-size: 13px; color: #94a3b8;\">This verification code is valid for <strong>15 minutes</strong>. If you did not initiate this request, please ignore this email.</p>"
+                + "</div>"
+                + "<div style=\"text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8;\">"
+                + "&copy; 2026 " + siteTitle + ". All rights reserved."
+                + "</div>"
+                + "</div>";
+
+        // 1. Try Resend HTTP API (Port 443 HTTPS - completely bypasses cloud SMTP port blocks)
+        if (sendViaResendHttp(toEmail, subject, htmlContent)) {
+            return;
+        }
+
+        // 2. Fallback to JavaMailSender (SMTP)
+        sendViaSmtp(toEmail, subject, htmlContent);
+    }
+
+    private boolean sendViaResendHttp(String toEmail, String subject, String htmlContent) {
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            return false;
+        }
+        try {
+            String jsonPayload = String.format(
+                    "{\"from\":\"%s <%s>\",\"to\":[\"%s\"],\"subject\":%s,\"html\":%s}",
+                    siteTitle,
+                    resendFromEmail,
+                    toEmail,
+                    objectMapper.writeValueAsString(subject),
+                    objectMapper.writeValueAsString(htmlContent)
+            );
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.resend.com/emails"))
+                    .header("Authorization", "Bearer " + resendApiKey.trim())
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                log.info("Email [{}] sent successfully via Resend HTTPS API (Port 443) to {}", subject, toEmail);
+                return true;
+            } else {
+                log.warn("Resend API returned status {}: {}", response.statusCode(), response.body());
+                return false;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to send via Resend HTTPS API: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private void sendViaSmtp(String toEmail, String subject, String htmlContent) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail, siteTitle);
             helper.setTo(toEmail);
-            helper.setSubject("📧 Registration Verification Code - " + siteTitle);
-
-            String htmlContent = "<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;\">"
-                    + "<div style=\"text-align: center; margin-bottom: 24px;\">"
-                    + "<h2 style=\"color: #4f46e5; margin: 0; font-size: 24px;\">" + siteTitle + "</h2>"
-                    + "<p style=\"color: #64748b; font-size: 14px; margin-top: 4px;\">Account Registration Verification</p>"
-                    + "</div>"
-                    + "<div style=\"background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;\">"
-                    + "<p style=\"font-size: 15px; color: #334155; line-height: 1.6;\">Thank you for creating an account! Please enter the 6-digit verification code below to verify your email address and complete registration:</p>"
-                    + "<div style=\"margin: 20px 0; padding: 14px; background: #f1f5f9; border-radius: 12px; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #4f46e5; font-family: monospace;\">"
-                    + otpCode
-                    + "</div>"
-                    + "<p style=\"font-size: 13px; color: #94a3b8;\">This verification code is valid for <strong>15 minutes</strong>. If you did not initiate this request, please ignore this email.</p>"
-                    + "</div>"
-                    + "<div style=\"text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8;\">"
-                    + "&copy; 2026 " + siteTitle + ". All rights reserved."
-                    + "</div>"
-                    + "</div>";
-
+            helper.setSubject(subject);
             helper.setText(htmlContent, true);
+
             mailSender.send(message);
-            log.info("Registration OTP email sent successfully via JavaMailSender to {}", toEmail);
+            log.info("Email [{}] sent successfully via JavaMailSender (SMTP) to {}", subject, toEmail);
         } catch (Exception e) {
-            log.error("Failed to send registration OTP email via JavaMailSender to {}: {}", toEmail, e.getMessage(), e);
+            log.error("Failed to send email via JavaMailSender (SMTP) to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 }
