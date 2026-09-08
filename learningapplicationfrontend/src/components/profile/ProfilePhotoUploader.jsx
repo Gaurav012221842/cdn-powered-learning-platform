@@ -2,6 +2,7 @@ import React, { useState, useContext, useRef } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { API_V1_URL } from '../../services/api';
 import ChangePasswordCard from './ChangePasswordCard';
+import DeviceSessionsSection from './DeviceSessionsSection';
 
 const API_BASE = API_V1_URL;
 
@@ -355,6 +356,9 @@ const ProfilePhotoUploader = () => {
           )}
         </div>
       </div>
+
+      {/* Logged in Device & Admin Student Session Audit Section */}
+      <DeviceSessionsSection />
     </div>
   );
 };

@@ -28,8 +28,8 @@ public class RazorpayService {
     }
 
     public boolean verifySignature(String orderId, String paymentId, String signature) {
-        if (signature == null || signature.isBlank()) {
-            return true;
+        if (orderId == null || orderId.isBlank() || paymentId == null || paymentId.isBlank() || signature == null || signature.isBlank()) {
+            return false;
         }
         try {
             String payload = orderId + "|" + paymentId;
@@ -37,7 +37,7 @@ public class RazorpayService {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(secretKeySpec);
             byte[] hash = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
-            
+
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
@@ -45,9 +45,20 @@ public class RazorpayService {
                 hexString.append(hex);
             }
             String calculatedSignature = hexString.toString();
-            return calculatedSignature.equals(signature) || signature.startsWith("sig_");
+
+            // Strict cryptographic match
+            if (calculatedSignature.equalsIgnoreCase(signature.trim())) {
+                return true;
+            }
+
+            // Controlled test mock mode only when running with default test mock credentials
+            if (razorpayKeySecret.contains("mock") && signature.startsWith("sig_test_valid_")) {
+                return true;
+            }
+
+            return false;
         } catch (Exception e) {
-            return true;
+            return false;
         }
     }
 }

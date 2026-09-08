@@ -4,11 +4,15 @@ import com.LearningPlatformApplication.common.ApiResponse;
 import com.LearningPlatformApplication.course.dto.CourseResponse;
 import com.LearningPlatformApplication.course.dto.CreateCourseRequest;
 import com.LearningPlatformApplication.course.dto.UpdateCourseRequest;
+import com.LearningPlatformApplication.security.JwtService;
+import com.LearningPlatformApplication.user.User;
+import com.LearningPlatformApplication.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -17,6 +21,8 @@ import java.util.UUID;
 public class CourseController {
 
     private final CourseService courseService;
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CourseResponse>>> getAllCourses() {
@@ -24,8 +30,37 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<CourseResponse>> getCourseById(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success("Course retrieved", courseService.getCourseById(id)));
+    public ResponseEntity<ApiResponse<CourseResponse>> getCourseById(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String studentId,
+            @RequestParam(required = false) String email,
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        UUID sId = parseUUID(studentId);
+        boolean isAdmin = checkIsAdmin(authHeader);
+        return ResponseEntity.ok(ApiResponse.success("Course retrieved", courseService.getCourseById(id, sId, email, isAdmin)));
+    }
+
+    private boolean checkIsAdmin(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return false;
+        try {
+            String token = authHeader.substring(7);
+            String userEmail = jwtService.extractUsername(token);
+            if (userEmail == null || userEmail.isBlank()) return false;
+            Optional<User> uOpt = userRepository.findByEmail(userEmail);
+            return uOpt.isPresent() && "ADMIN".equalsIgnoreCase(uOpt.get().getRole());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private UUID parseUUID(String str) {
+        if (str == null || str.isBlank() || str.equals("undefined") || str.equals("null")) return null;
+        try {
+            return UUID.fromString(str);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @PostMapping

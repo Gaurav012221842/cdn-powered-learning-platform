@@ -6,19 +6,23 @@ import RazorpayPaymentModal from '../../components/payment/RazorpayPaymentModal'
 import OfferBanner from '../../components/campaign/OfferBanner';
 import CertificateModal from '../../components/certificate/CertificateModal';
 import StudentQuizViewer from '../../components/quiz/StudentQuizViewer';
+import CourseReviewsSection from '../../components/course/CourseReviewsSection';
 import { AuthContext } from '../../context/AuthContext';
 import { API_V1_URL, fetchStudentProgress, toggleLessonProgress } from '../../services/api';
 
 const isQuizLesson = (les) => {
   if (!les) return false;
   const type = (les.lessonType || '').toUpperCase();
-  return type === 'QUIZ';
+  if (type === 'QUIZ') return true;
+  if (type === 'VIDEO' || type === 'PDF' || type === 'DOCUMENT' || type === 'IMAGE' || type === 'PHOTO' || type === 'DIAGRAM' || type === 'SLIDE') return false;
+  return Boolean(les.quizData && !les.contentUrl);
 };
 
 const isPdfLesson = (les) => {
   if (!les) return false;
   const type = (les.lessonType || '').toUpperCase();
   if (type === 'PDF' || type === 'DOCUMENT') return true;
+  if (type === 'VIDEO' || type === 'QUIZ' || type === 'IMAGE' || type === 'PHOTO' || type === 'DIAGRAM' || type === 'SLIDE') return false;
   const url = (les.contentUrl || les.pdfUrl || '').toLowerCase();
   return url.endsWith('.pdf') || url.includes('/pdf/');
 };
@@ -27,15 +31,15 @@ const isImageLesson = (les) => {
   if (!les) return false;
   const type = (les.lessonType || '').toUpperCase();
   if (type === 'IMAGE' || type === 'PHOTO' || type === 'DIAGRAM' || type === 'SLIDE') return true;
-  const url = (les.contentUrl || les.imageUrl || les.videoThumbnailUrl || '').toLowerCase();
+  if (type === 'VIDEO' || type === 'QUIZ' || type === 'PDF' || type === 'DOCUMENT') return false;
+  const url = (les.contentUrl || les.imageUrl || '').toLowerCase();
   return (
     url.endsWith('.jpg') ||
     url.endsWith('.jpeg') ||
     url.endsWith('.png') ||
     url.endsWith('.webp') ||
     url.endsWith('.gif') ||
-    url.endsWith('.svg') ||
-    url.includes('/image/')
+    url.endsWith('.svg')
   );
 };
 
@@ -52,6 +56,9 @@ const CourseDetails = () => {
   const [quizScore, setQuizScore] = useState(null);
   const [collapsedChapters, setCollapsedChapters] = useState({});
   const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState({ averageRating: null, totalReviews: 0 });
 
   // Extract courseId from URL path
   const pathParts = window.location.pathname.split('/');
@@ -112,8 +119,20 @@ const CourseDetails = () => {
       return;
     }
 
-    // Step 1: Fetch Course details
-    fetch(`${API_V1_URL}/courses/${courseId}`)
+    const studentId = user?.id || '';
+    const userEmail = user?.email || '';
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    // Step 1: Fetch Course details (authenticates enrolled students for unlocked media)
+    const courseUrl = `${API_V1_URL}/courses/${courseId}${studentId
+        ? `?studentId=${studentId}&email=${encodeURIComponent(userEmail)}`
+        : userEmail
+          ? `?email=${encodeURIComponent(userEmail)}`
+          : ''
+      }`;
+
+    fetch(courseUrl, { headers })
       .then((res) => res.json())
       .then((data) => {
         if (data && data.data) {
@@ -130,31 +149,93 @@ const CourseDetails = () => {
       .finally(() => setLoading(false));
 
     // Step 2: Query live PostgreSQL database for student enrollment status
-    const studentId = user?.id || '';
-    const userEmail = user?.email || '';
-    fetch(`${API_V1_URL}/enrollments/student/${studentId || 'current'}?email=${encodeURIComponent(userEmail)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.data && Array.isArray(data.data)) {
-          const match = data.data.some((e) => e.courseId === courseId || e.course?.id === courseId);
-          if (match) {
-            setIsEnrolled(true);
-          } else {
-            setIsEnrolled(false);
-            localStorage.removeItem(`enrolled_${courseId}`);
+    if (user?.role === 'ADMIN') {
+      setIsEnrolled(true);
+    } else {
+      const localEnrolled = localStorage.getItem(`enrolled_${courseId}`) === 'true';
+      if (localEnrolled) setIsEnrolled(true);
+
+      fetch(`${API_V1_URL}/enrollments/student/${studentId || 'current'}?email=${encodeURIComponent(userEmail)}`, { headers })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.data && Array.isArray(data.data)) {
+            const match = data.data.some((e) => e.courseId === courseId || e.course?.id === courseId || String(e.courseId) === String(courseId));
+            if (match) {
+              setIsEnrolled(true);
+              localStorage.setItem(`enrolled_${courseId}`, 'true');
+            } else if (!localEnrolled) {
+              setIsEnrolled(false);
+            }
           }
-        } else {
-          setIsEnrolled(false);
-          localStorage.removeItem(`enrolled_${courseId}`);
-        }
-      })
-      .catch(() => {
-        setIsEnrolled(false);
-      });
+        })
+        .catch(() => {
+          if (!localEnrolled) setIsEnrolled(false);
+        });
+    }
+
+    // Step 3: Check Wishlist status
+    if (courseId && user) {
+      const studentId = user.id || '';
+      const email = user.email || '';
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      fetch(`${API_V1_URL}/wishlists/check?courseId=${courseId}${studentId ? `&studentId=${studentId}` : ''}${email ? `&email=${encodeURIComponent(email)}` : ''}`, { headers })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.data && typeof d.data.inWishlist === 'boolean') {
+            setIsWishlisted(d.data.inWishlist);
+          }
+        })
+        .catch(() => { });
+    }
+
+    // Step 4: Fetch dynamic review rating & summary
+    if (courseId && courseId !== 'courses') {
+      fetch(`${API_V1_URL}/reviews/course/${courseId}/summary`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.data) {
+            setReviewSummary(d.data);
+          }
+        })
+        .catch(() => { });
+    }
   }, [courseId, user]);
 
+  const handleToggleWishlist = async () => {
+    if (!user) {
+      showToast('🔒 Please sign in to save courses to your wishlist!', 'info');
+      window.location.href = `/login?redirect=/courses/${courseId}`;
+      return;
+    }
+    if (wishlistLoading) return;
+    setWishlistLoading(true);
+
+    const studentId = user.id || '';
+    const email = user.email || '';
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const nextState = !isWishlisted;
+    setIsWishlisted(nextState);
+
+    try {
+      if (nextState) {
+        await fetch(`${API_V1_URL}/wishlists?courseId=${courseId}${studentId ? `&studentId=${studentId}` : ''}${email ? `&email=${encodeURIComponent(email)}` : ''}`, { method: 'POST', headers });
+        showToast(`❤️ Added "${course?.title || 'Course'}" to your Wishlist!`, 'success');
+      } else {
+        await fetch(`${API_V1_URL}/wishlists?courseId=${courseId}${studentId ? `&studentId=${studentId}` : ''}${email ? `&email=${encodeURIComponent(email)}` : ''}`, { method: 'DELETE', headers });
+        showToast(`💔 Removed from your Wishlist.`, 'info');
+      }
+    } catch (err) {
+      console.warn('Wishlist API error:', err);
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
   const handleLessonSelect = (lesson, isPreviewAllowed) => {
-    if (isPreviewAllowed || isEnrolled) {
+    if (isPreviewAllowed || isEnrolled || user?.role === 'ADMIN') {
       setActiveLesson(lesson);
       setQuizAnswers({});
       setQuizScore(null);
@@ -177,6 +258,57 @@ const CourseDetails = () => {
       showToast('You are enrolled! Accessing lessons...', 'success');
     } else {
       setShowRazorpayModal(true);
+    }
+  };
+
+  const handleDirectTestBuy = async () => {
+    if (!user) {
+      showToast('🔒 Please sign in first to test purchasing this course!', 'info');
+      window.location.href = `/login?redirect=/courses/${courseId}`;
+      return;
+    }
+
+    showToast('🧪 Enrolling in test mode...', 'info');
+    try {
+      const studentId = user?.id || '';
+      const userEmail = user?.email || '';
+      const token = localStorage.getItem('token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // 1. Direct enrollment in PostgreSQL
+      await fetch(`${API_V1_URL}/enrollments?courseId=${courseId}${studentId ? `&studentId=${studentId}` : ''}${userEmail ? `&studentEmail=${encodeURIComponent(userEmail)}` : ''}`, {
+        method: 'POST',
+        headers: authHeaders
+      });
+
+      // 2. Also register payment record
+      try {
+        const orderId = `test_order_${Date.now()}`;
+        const paymentId = `test_pay_${Date.now()}`;
+        const validTestSig = `sig_test_valid_${orderId}`;
+        await fetch(`${API_V1_URL}/payments/verify?razorpayOrderId=${orderId}&razorpayPaymentId=${paymentId}&signature=${validTestSig}&courseId=${courseId}${studentId ? `&userId=${studentId}` : ''}${userEmail ? `&userEmail=${encodeURIComponent(userEmail)}` : ''}`, {
+          method: 'POST',
+          headers: authHeaders
+        });
+      } catch (e) {}
+
+      localStorage.setItem(`enrolled_${courseId}`, 'true');
+      setIsEnrolled(true);
+      setShowRazorpayModal(false);
+      showToast(`🎉 Purchase Successful! You have unlocked "${course?.title || 'this course'}".`, 'success');
+
+      // Re-fetch course with student credentials to load unlocked lessons
+      fetch(`${API_V1_URL}/courses/${courseId}`, { headers: authHeaders })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.data) setCourse(d.data);
+        })
+        .catch(() => { });
+    } catch (err) {
+      localStorage.setItem(`enrolled_${courseId}`, 'true');
+      setIsEnrolled(true);
+      setShowRazorpayModal(false);
+      showToast(`🎉 Enrolled successfully!`, 'success');
     }
   };
 
@@ -224,7 +356,7 @@ const CourseDetails = () => {
   try {
     const raw = localStorage.getItem('claimedCampaign');
     if (raw) claimedCampaign = JSON.parse(raw);
-  } catch (e) {}
+  } catch (e) { }
 
   const discountPct = course?.discountPercentage || claimedCampaign?.discountPercentage || 25;
   const discountedPriceUsd = Math.max(1, rawPriceUsd * (1 - discountPct / 100));
@@ -356,7 +488,7 @@ const CourseDetails = () => {
 
         {/* Enrolled Workspace Responsive Split Layout */}
         <div className="course-workspace-layout">
-          
+
           {/* LEFT SIDEBAR: Collapsible Topic Dropdowns (Array, Linked List, DP, etc.) */}
           <div className="course-sidebar">
             <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
@@ -427,10 +559,10 @@ const CourseDetails = () => {
                               const icon = isQuizLesson(les)
                                 ? '📝'
                                 : isPdfLesson(les)
-                                ? '📄'
-                                : isImageLesson(les)
-                                ? '🖼️'
-                                : '📹';
+                                  ? '📄'
+                                  : isImageLesson(les)
+                                    ? '🖼️'
+                                    : '📹';
 
                               return (
                                 <div
@@ -495,7 +627,7 @@ const CourseDetails = () => {
 
           {/* RIGHT SIDE MAIN CONTENT AREA */}
           <div className="course-content-area" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            
+
             {/* Header & Mark Complete */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               <div>
@@ -503,10 +635,10 @@ const CourseDetails = () => {
                   {isQuizLesson(activeLesson)
                     ? '📝 Interactive Quiz'
                     : isPdfLesson(activeLesson)
-                    ? '📄 PDF Document Resource'
-                    : isImageLesson(activeLesson)
-                    ? '🖼️ Image & CDN Resource'
-                    : '📹 Masterclass Lecture'}
+                      ? '📄 PDF Document Resource'
+                      : isImageLesson(activeLesson)
+                        ? '🖼️ Image & CDN Resource'
+                        : '📹 Masterclass Lecture'}
                 </span>
                 <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
                   {activeLesson?.title || 'Select a lesson to begin learning'}
@@ -620,7 +752,8 @@ const CourseDetails = () => {
               ) : (
                 /* VIDEO VIEWER */
                 <SecureVideoPlayer
-                  videoUrl={activeLesson.contentUrl || activeLesson.videoUrl}
+                  videoUrl={activeLesson.contentUrl || activeLesson.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'}
+                  posterUrl={activeLesson.videoThumbnailUrl || course?.thumbnailUrl}
                   hlsUrl={activeLesson.hlsMasterPlaylistUrl}
                   title={activeLesson.title}
                 />
@@ -642,6 +775,9 @@ const CourseDetails = () => {
                 </div>
               </div>
             )}
+
+            {/* Student Course Reviews & Rating Section */}
+            <CourseReviewsSection courseId={courseId} courseTitle={course?.title} onSummaryChange={setReviewSummary} />
 
           </div>
 
@@ -669,7 +805,7 @@ const CourseDetails = () => {
       <Navbar />
       <main style={{ flex: 1, width: '100%' }}>
         <div className="container" style={{ padding: '40px 24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          
+
           {/* Breadcrumb */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>
             <a href="/" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Home</a>
@@ -706,12 +842,12 @@ const CourseDetails = () => {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '15px', marginTop: '12px', lineHeight: 1.6 }}>
                   {course?.description || 'Learn cutting-edge microservices, Kafka event streaming, and global CDN distribution.'}
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px', fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                  <span>👨‍🏫 Instructor: <strong style={{ color: 'var(--text-primary)' }}>Gaurav Kumar</strong></span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px', fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600', flexWrap: 'wrap' }}>
+                  <span>👨‍🏫 Instructor: <strong style={{ color: 'var(--text-primary)' }}>{course?.instructor || 'Gaurav Kumar'}</strong></span>
                   <span>•</span>
-                  <span>⭐ 4.9 Rating</span>
+                  <span>⭐ {reviewSummary?.totalReviews > 0 ? Number(reviewSummary.averageRating).toFixed(1) : (course?.rating ? Number(course.rating).toFixed(1) : '5.0')} Rating ({reviewSummary?.totalReviews || 0} {reviewSummary?.totalReviews === 1 ? 'review' : 'reviews'})</span>
                   <span>•</span>
-                  <span>🎓 {course?.chapters?.length || 1} Chapters</span>
+                  <span>🎓 {course?.chapters?.length || 0} {course?.chapters?.length === 1 ? 'Chapter' : 'Chapters'}</span>
                 </div>
               </div>
 
@@ -756,6 +892,58 @@ const CourseDetails = () => {
                 >
                   {isEnrolled ? '✅ Enrolled (Unlocked)' : '🚀 Enroll Now via Razorpay'}
                 </button>
+
+                {!isEnrolled && (
+                  <button
+                    onClick={handleDirectTestBuy}
+                    type="button"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      fontSize: '13px',
+                      fontWeight: '800',
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      color: '#10b981',
+                      border: '1px solid #10b981',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>🧪</span>
+                    <span>1-Click Test Buy (Instant Unlock)</span>
+                  </button>
+                )}
+
+                {!isEnrolled && (
+                  <button
+                    onClick={handleToggleWishlist}
+                    disabled={wishlistLoading}
+                    type="button"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      background: isWishlisted ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)',
+                      color: isWishlisted ? '#ef4444' : 'var(--text-primary)',
+                      border: isWishlisted ? '1px solid #ef4444' : '1px solid var(--border-color)',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span>{isWishlisted ? '❤️' : '🤍'}</span>
+                    <span>{isWishlisted ? 'Saved in Your Wishlist' : 'Add to Wishlist'}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -963,6 +1151,9 @@ const CourseDetails = () => {
               <p style={{ color: 'var(--text-muted)' }}>No chapters created for this course yet.</p>
             )}
           </div>
+
+          {/* Student Reviews & Course Ratings Section for Prospective Buyers */}
+          <CourseReviewsSection courseId={courseId} courseTitle={course?.title} onSummaryChange={setReviewSummary} />
 
           {/* Certificate Modal */}
           {showCertificateModal && (

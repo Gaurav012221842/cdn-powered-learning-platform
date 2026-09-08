@@ -13,14 +13,20 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> register(
+            @RequestBody RegisterRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
+        AuthResponse response = authService.register(request, httpRequest);
         return ResponseEntity.ok(ApiResponse.success("User registered successfully", response));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
+            @RequestBody LoginRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
+        AuthResponse response = authService.login(request, httpRequest);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
     @PostMapping("/logout")
@@ -58,14 +64,20 @@ public class AuthController {
     }
 
     @PostMapping("/verify-registration-otp")
-    public ResponseEntity<ApiResponse<AuthResponse>> verifyRegistrationOtpAndRegister(@RequestBody VerifyRegistrationOtpRequest request) {
-        AuthResponse response = authService.verifyRegistrationOtpAndRegister(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyRegistrationOtpAndRegister(
+            @RequestBody VerifyRegistrationOtpRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
+        AuthResponse response = authService.verifyRegistrationOtpAndRegister(request, httpRequest);
         return ResponseEntity.ok(ApiResponse.success("Account registered and verified successfully!", response));
     }
 
     @PostMapping("/google")
-    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@RequestBody GoogleLoginRequest request) {
-        AuthResponse response = authService.googleLogin(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(
+            @RequestBody GoogleLoginRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
+        AuthResponse response = authService.googleLogin(request, httpRequest);
         return ResponseEntity.ok(ApiResponse.success("Google authentication successful!", response));
     }
 

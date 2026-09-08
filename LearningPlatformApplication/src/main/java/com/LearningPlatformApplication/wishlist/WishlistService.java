@@ -1,5 +1,6 @@
 package com.LearningPlatformApplication.wishlist;
 
+import com.LearningPlatformApplication.enrollment.EnrollmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -14,29 +15,34 @@ import java.util.UUID;
 public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
+    private final EnrollmentService enrollmentService;
 
-    @Cacheable(value = "user_wishlist", key = "#studentId")
-    public List<Wishlist> getUserWishlist(UUID studentId) {
-        return wishlistRepository.findByStudentId(studentId);
+    @Cacheable(value = "user_wishlist", key = "(#studentId != null ? #studentId.toString() : '') + '_' + (#email != null ? #email : '')")
+    public List<Wishlist> getUserWishlist(UUID studentId, String email) {
+        UUID validId = enrollmentService.getValidUserId(studentId, email);
+        return wishlistRepository.findByStudentId(validId);
     }
 
     @CacheEvict(value = {"user_wishlist", "wishlist_check"}, allEntries = true)
-    public Wishlist addToWishlist(UUID studentId, UUID courseId) {
-        return wishlistRepository.findByStudentIdAndCourseId(studentId, courseId)
+    public Wishlist addToWishlist(UUID studentId, String email, UUID courseId) {
+        UUID validId = enrollmentService.getValidUserId(studentId, email);
+        return wishlistRepository.findByStudentIdAndCourseId(validId, courseId)
                 .orElseGet(() -> wishlistRepository.save(Wishlist.builder()
-                        .studentId(studentId)
+                        .studentId(validId)
                         .courseId(courseId)
                         .build()));
     }
 
     @Transactional
     @CacheEvict(value = {"user_wishlist", "wishlist_check"}, allEntries = true)
-    public void removeFromWishlist(UUID studentId, UUID courseId) {
-        wishlistRepository.deleteByStudentIdAndCourseId(studentId, courseId);
+    public void removeFromWishlist(UUID studentId, String email, UUID courseId) {
+        UUID validId = enrollmentService.getValidUserId(studentId, email);
+        wishlistRepository.deleteByStudentIdAndCourseId(validId, courseId);
     }
 
-    @Cacheable(value = "wishlist_check", key = "#studentId.toString() + '_' + #courseId.toString()")
-    public boolean isInWishlist(UUID studentId, UUID courseId) {
-        return wishlistRepository.findByStudentIdAndCourseId(studentId, courseId).isPresent();
+    @Cacheable(value = "wishlist_check", key = "(#studentId != null ? #studentId.toString() : '') + '_' + (#email != null ? #email : '') + '_' + #courseId.toString()")
+    public boolean isInWishlist(UUID studentId, String email, UUID courseId) {
+        UUID validId = enrollmentService.getValidUserId(studentId, email);
+        return wishlistRepository.findByStudentIdAndCourseId(validId, courseId).isPresent();
     }
 }

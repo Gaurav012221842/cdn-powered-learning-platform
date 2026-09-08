@@ -160,12 +160,12 @@ const AdminDashboard = () => {
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px', flex: 1, lineHeight: 1.5 }}>
                 View all courses, edit lectures & quizzes, update categories/prices, and add new curriculum modules.
               </p>
-              <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <a href="/admin/courses" className="btn btn-primary" style={{ width: '100%', padding: '10px', fontWeight: '700', textAlign: 'center' }}>
-                  📋 Manage & Edit Courses
+              <div style={{ marginTop: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <a href="/admin/courses" className="btn btn-primary" style={{ padding: '12px 6px', fontWeight: '700', fontSize: '13px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  📋 Manage Courses
                 </a>
-                <a href="/admin/course/create" className="btn btn-secondary" style={{ width: '100%', padding: '10px', fontWeight: '700', textAlign: 'center' }}>
-                  ➕ Create New Course
+                <a href="/admin/course/create" className="btn btn-secondary" style={{ padding: '12px 6px', fontWeight: '700', fontSize: '13px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  ➕ Create Course
                 </a>
               </div>
             </div>

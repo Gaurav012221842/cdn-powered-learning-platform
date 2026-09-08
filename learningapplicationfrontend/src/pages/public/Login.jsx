@@ -3,29 +3,26 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { AuthContext } from '../../context/AuthContext';
 import { API_V1_URL, API_BASE_URL } from '../../services/api';
-
 import GoogleLoginButton from '../../components/common/GoogleLoginButton';
 
 const Login = () => {
-  const [email, setEmail] = useState('student@gauravlearn.com');
-  const [password, setPassword] = useState('password123');
-  const [role, setRole] = useState('STUDENT');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
   const { user, login, siteConfig } = useContext(AuthContext);
 
   const brandName = siteConfig?.siteName || 'Gaurav';
-
   const redirectUrl = new URLSearchParams(window.location.search).get('redirect');
 
   useEffect(() => {
     if (window.location.search.includes('expired=1')) {
-      setInfoMsg('⏰ Your previous session has expired (1-day limit). Please log in again.');
+      setInfoMsg('⏰ Your previous session has expired. Please log in again.');
     }
   }, []);
 
-  // Redirect if already logged in
+  // Redirect if already logged in based on auto-detected backend role
   useEffect(() => {
     if (user) {
       if (redirectUrl) {
@@ -45,7 +42,7 @@ const Login = () => {
       const res = await fetch(`${API_V1_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: email.trim(), password })
       });
 
       const data = await res.json().catch(() => ({}));
@@ -53,32 +50,23 @@ const Login = () => {
       if (res.ok && data.success && data.data?.token) {
         const { token, fullName, role: userRole, avatarUrl } = data.data;
         login(token, {
-          email,
-          fullName: fullName || (role === 'ADMIN' ? 'Gaurav Admin' : 'Gaurav Student'),
-          role: userRole || role,
+          email: email.trim(),
+          fullName: fullName || email.split('@')[0],
+          role: userRole || 'STUDENT',
           avatarUrl
         });
         if (redirectUrl) {
           window.location.href = redirectUrl;
         } else {
-          window.location.href = (userRole || role) === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard';
+          window.location.href = userRole === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard';
         }
       } else {
         setErrorMsg(data.message || 'Invalid email or password. Please verify your credentials.');
       }
     } catch (err) {
-      setErrorMsg(`Unable to connect to Spring Boot server at ${API_BASE_URL}. Please ensure your backend is running.`);
+      setErrorMsg(`Unable to connect to server at ${API_BASE_URL}. Please ensure backend is running.`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const setDemoUser = (userRole) => {
-    setRole(userRole);
-    if (userRole === 'ADMIN') {
-      setEmail('admin@gauravlearn.com');
-    } else {
-      setEmail('student@gauravlearn.com');
     }
   };
 
@@ -90,18 +78,18 @@ const Login = () => {
           flex: 1,
           display: 'flex',
           alignItems: 'center',
-          justify: 'center',
+          justifyContent: 'center',
           padding: '48px 24px'
         }}
       >
         <div className="card auth-card-grid animate-fade-in">
           {/* LEFT COLUMN: LOGIN FORM */}
           <div className="auth-form-side">
-            <div style={{ marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '6px' }}>
                 Welcome to {brandName}
               </h2>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
                 Sign in to your account
               </p>
             </div>
@@ -140,69 +128,24 @@ const Login = () => {
               </div>
             )}
 
-            {/* Quick Demo Selector */}
-            <div
-              style={{
-                display: 'flex',
-                gap: '8px',
-                background: 'var(--bg-secondary)',
-                padding: '4px',
-                borderRadius: '10px',
-                marginBottom: '20px'
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setDemoUser('STUDENT')}
-                style={{
-                  flex: 1,
-                  padding: '7px',
-                  borderRadius: '7px',
-                  border: 'none',
-                  background: role === 'STUDENT' ? 'var(--bg-card)' : 'transparent',
-                  color: role === 'STUDENT' ? 'var(--primary)' : 'var(--text-muted)',
-                  fontWeight: '700',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  boxShadow: role === 'STUDENT' ? 'var(--shadow-sm)' : 'none'
-                }}
-              >
-                🎓 Student Demo
-              </button>
-              <button
-                type="button"
-                onClick={() => setDemoUser('ADMIN')}
-                style={{
-                  flex: 1,
-                  padding: '7px',
-                  borderRadius: '7px',
-                  border: 'none',
-                  background: role === 'ADMIN' ? 'var(--bg-card)' : 'transparent',
-                  color: role === 'ADMIN' ? 'var(--primary)' : 'var(--text-muted)',
-                  fontWeight: '700',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  boxShadow: role === 'ADMIN' ? 'var(--shadow-sm)' : 'none'
-                }}
-              >
-                ⚡ Admin Demo
-              </button>
-            </div>
+            {/* Google OAuth 2.0 Sign In */}
+            <GoogleLoginButton label="Continue with Google" isRegister={false} />
 
-            <GoogleLoginButton label="Sign in with Google" role={role} isRegister={false} />
-
-            <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', gap: '10px' }}>
               <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>OR SIGN IN WITH EMAIL</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '0.5px' }}>
+                OR SIGN IN WITH EMAIL
+              </span>
               <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Email Address</label>
                 <input
                   type="email"
                   required
+                  placeholder="name@example.com"
                   className="form-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -227,22 +170,23 @@ const Login = () => {
                 <input
                   type="password"
                   required
+                  placeholder="••••••••"
                   className="form-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
 
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '4px' }} disabled={loading}>
-                {loading ? 'Authenticating with Backend...' : 'Sign In'}
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '4px', fontWeight: '800' }} disabled={loading}>
+                {loading ? 'Authenticating...' : 'Sign In'}
               </button>
             </form>
 
-            <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ textAlign: 'center', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
               <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                 Don't have an account?{' '}
               </span>
-              <a href="/register" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary)' }}>
+              <a href="/register" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary)', textDecoration: 'none' }}>
                 Sign Up Free
               </a>
             </div>

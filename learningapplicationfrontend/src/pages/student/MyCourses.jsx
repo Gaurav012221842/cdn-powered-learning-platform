@@ -23,14 +23,29 @@ const MyCourses = () => {
     fetch(`${API_V1_URL}/enrollments/student/${studentId}?email=${encodeURIComponent(userEmail)}`, { headers })
       .then((res) => res.json())
       .then(async (data) => {
-        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+        let enrollmentList = (data && data.data && Array.isArray(data.data)) ? data.data : [];
+
+        // If Admin has 0 manual enrollments, load all available courses for preview
+        if (enrollmentList.length === 0 && savedUser?.role === 'ADMIN') {
+          try {
+            const allRes = await fetch(`${API_V1_URL}/courses`, { headers });
+            if (allRes.ok) {
+              const allData = await allRes.json();
+              if (allData?.data && Array.isArray(allData.data)) {
+                enrollmentList = allData.data.map((c) => ({ courseId: c.id, course: c }));
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (enrollmentList.length > 0) {
           // Fetch course details and real progress from PostgreSQL for each enrolled course
           const enrolledList = await Promise.all(
-            data.data.map(async (e) => {
+            enrollmentList.map(async (e) => {
               const cId = e.courseId || e.course?.id;
               let courseObj = e.course;
               try {
-                const cRes = await fetch(`${API_V1_URL}/courses/${cId}`);
+                const cRes = await fetch(`${API_V1_URL}/courses/${cId}`, { headers });
                 if (cRes.ok) {
                   const cData = await cRes.json();
                   courseObj = cData.data || e.course;

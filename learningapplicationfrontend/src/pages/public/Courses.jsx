@@ -55,10 +55,11 @@ const Courses = () => {
             description: c.description || 'Master modern cloud architecture & fullstack engineering.',
             price: c.price || 49.99,
             instructor: 'Gaurav Kumar',
-            rating: 4.9,
-            students: 1200,
+            rating: c.rating || null,
+            students: c.students || 1200,
             category: c.category || 'Fullstack Development',
-            thumbnailUrl: c.thumbnailUrl
+            thumbnailUrl: c.thumbnailUrl,
+            chapters: c.chapters || []
           }));
           setCourses(formatted);
         } else {

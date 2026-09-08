@@ -34,6 +34,7 @@ public class AuthService {
     private final TokenBlacklistService tokenBlacklistService;
     private final EmailService emailService;
     private final StringRedisTemplate stringRedisTemplate;
+    private final com.LearningPlatformApplication.user.DeviceSessionService deviceSessionService;
 
     @org.springframework.beans.factory.annotation.Value("${app.security.master-admin-email:serversidegaurav@gmail.com}")
     private String masterAdminEmail;
@@ -67,6 +68,10 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest request) {
+        return register(request, null);
+    }
+
+    public AuthResponse register(RegisterRequest request, jakarta.servlet.http.HttpServletRequest httpRequest) {
         if (request == null || request.getEmail() == null || request.getPassword() == null) {
             throw new IllegalArgumentException("Email and password are required");
         }
@@ -89,26 +94,34 @@ public class AuthService {
                 .role(assignedRole)
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
         org.springframework.security.core.userdetails.User userDetails =
                 new org.springframework.security.core.userdetails.User(
-                        user.getEmail(),
-                        user.getPasswordHash(),
-                        java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                        savedUser.getEmail(),
+                        savedUser.getPasswordHash(),
+                        java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + savedUser.getRole()))
                 );
         String jwtToken = jwtService.generateToken(userDetails);
 
+        if (deviceSessionService != null) {
+            deviceSessionService.recordLoginSession(savedUser, jwtToken, httpRequest);
+        }
+
         return AuthResponse.builder()
-                .id(user.getId())
+                .id(savedUser.getId())
                 .token(jwtToken)
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .role(user.getRole())
-                .avatarUrl(user.getAvatarUrl())
+                .email(savedUser.getEmail())
+                .fullName(savedUser.getFullName())
+                .role(savedUser.getRole())
+                .avatarUrl(savedUser.getAvatarUrl())
                 .build();
     }
 
     public AuthResponse login(LoginRequest request) {
+        return login(request, null);
+    }
+
+    public AuthResponse login(LoginRequest request, jakarta.servlet.http.HttpServletRequest httpRequest) {
         if (request == null || request.getEmail() == null || request.getPassword() == null) {
             throw new IllegalArgumentException("Email and password are required");
         }
@@ -131,6 +144,10 @@ public class AuthService {
                         java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole()))
                 );
         String jwtToken = jwtService.generateToken(userDetails);
+
+        if (deviceSessionService != null) {
+            deviceSessionService.recordLoginSession(user, jwtToken, httpRequest);
+        }
 
         return AuthResponse.builder()
                 .id(user.getId())
@@ -278,7 +295,10 @@ public class AuthService {
         log.info("Registration OTP {} generated, saved to Redis, and email dispatched for {}", otpCode, email);
     }
 
-    public AuthResponse verifyRegistrationOtpAndRegister(VerifyRegistrationOtpRequest request) {
+    public AuthResponse verifyRegistrationOtpAndRegister(
+            VerifyRegistrationOtpRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
         if (request == null || request.getEmail() == null || request.getOtpCode() == null) {
             throw new IllegalArgumentException("Email and verification code are required");
         }
@@ -318,28 +338,40 @@ public class AuthService {
                 .role(assignedRole)
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
         log.info("User {} verified via OTP and created successfully in PostgreSQL as {}", email, assignedRole);
 
         org.springframework.security.core.userdetails.User userDetails =
                 new org.springframework.security.core.userdetails.User(
-                        user.getEmail(),
-                        user.getPasswordHash(),
-                        java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                        savedUser.getEmail(),
+                        savedUser.getPasswordHash(),
+                        java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + savedUser.getRole()))
                 );
         String jwtToken = jwtService.generateToken(userDetails);
 
+        if (deviceSessionService != null) {
+            deviceSessionService.recordLoginSession(savedUser, jwtToken, httpRequest);
+        }
+
         return AuthResponse.builder()
-                .id(user.getId())
+                .id(savedUser.getId())
                 .token(jwtToken)
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .role(user.getRole())
-                .avatarUrl(user.getAvatarUrl())
+                .email(savedUser.getEmail())
+                .fullName(savedUser.getFullName())
+                .role(savedUser.getRole())
+                .avatarUrl(savedUser.getAvatarUrl())
                 .build();
     }
 
+    public AuthResponse verifyRegistrationOtpAndRegister(VerifyRegistrationOtpRequest request) {
+        return verifyRegistrationOtpAndRegister(request, null);
+    }
+
     public AuthResponse googleLogin(GoogleLoginRequest request) {
+        return googleLogin(request, null);
+    }
+
+    public AuthResponse googleLogin(GoogleLoginRequest request, jakarta.servlet.http.HttpServletRequest httpRequest) {
         if (request == null || request.getEmail() == null) {
             throw new IllegalArgumentException("Email is required for Google login");
         }
@@ -385,6 +417,10 @@ public class AuthService {
                         java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole()))
                 );
         String jwtToken = jwtService.generateToken(userDetails);
+
+        if (deviceSessionService != null) {
+            deviceSessionService.recordLoginSession(user, jwtToken, httpRequest);
+        }
 
         return AuthResponse.builder()
                 .id(user.getId())

@@ -36,15 +36,7 @@ const CreateCourse = () => {
           lessonType: 'VIDEO',
           contentUrl: '',
           videoThumbnailUrl: '',
-          quizData: JSON.stringify({
-            questions: [
-              {
-                question: 'What is the primary benefit of CDN-powered video streaming?',
-                options: ['Global Low-Latency', 'Offline ONLY', 'Manual Tape Delivery', 'Single Server Cap'],
-                correctIndex: 0
-              }
-            ]
-          })
+          quizData: ''
         }
       ]
     }

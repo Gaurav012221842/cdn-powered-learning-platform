@@ -16,6 +16,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final DeviceSessionService deviceSessionService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
@@ -33,6 +34,55 @@ public class UserController {
             return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
         }
         return ResponseEntity.ok(ApiResponse.success("Current user profile retrieved", userService.getUserByEmail(authentication.getName())));
+    }
+
+    @GetMapping("/sessions/me")
+    public ResponseEntity<ApiResponse<List<com.LearningPlatformApplication.user.dto.UserSessionDTO>>> getMySessions(
+            Authentication authentication,
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        List<com.LearningPlatformApplication.user.dto.UserSessionDTO> sessions =
+                deviceSessionService.getUserSessions(authentication.getName(), authHeader);
+        return ResponseEntity.ok(ApiResponse.success("Device sessions retrieved", sessions));
+    }
+
+    @GetMapping("/sessions/admin/all")
+    public ResponseEntity<ApiResponse<List<com.LearningPlatformApplication.user.dto.UserSessionDTO>>> getAllSessionsForAdmin(
+            Authentication authentication
+    ) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        List<com.LearningPlatformApplication.user.dto.UserSessionDTO> sessions =
+                deviceSessionService.getAllSessionsForAdmin(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.success("All student & user device login sessions retrieved", sessions));
+    }
+
+    @PostMapping("/sessions/{id}/revoke")
+    public ResponseEntity<ApiResponse<String>> revokeSession(
+            Authentication authentication,
+            @PathVariable UUID id
+    ) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        deviceSessionService.revokeSession(authentication.getName(), id);
+        return ResponseEntity.ok(ApiResponse.success("Session revoked successfully", "SUCCESS"));
+    }
+
+    @DeleteMapping("/sessions/{id}")
+    public ResponseEntity<ApiResponse<String>> deleteSession(
+            Authentication authentication,
+            @PathVariable UUID id
+    ) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        deviceSessionService.revokeSession(authentication.getName(), id);
+        return ResponseEntity.ok(ApiResponse.success("Session logged out successfully", "SUCCESS"));
     }
 
     @PutMapping("/profile")

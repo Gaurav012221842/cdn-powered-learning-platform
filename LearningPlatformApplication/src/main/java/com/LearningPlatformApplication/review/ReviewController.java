@@ -1,6 +1,7 @@
 package com.LearningPlatformApplication.review;
 
 import com.LearningPlatformApplication.common.ApiResponse;
+import com.LearningPlatformApplication.review.dto.CourseReviewDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,7 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @GetMapping("/course/{courseId}")
-    public ResponseEntity<ApiResponse<List<CourseReview>>> getReviews(@PathVariable UUID courseId) {
+    public ResponseEntity<ApiResponse<List<CourseReviewDTO>>> getReviews(@PathVariable UUID courseId) {
         return ResponseEntity.ok(ApiResponse.success("Reviews retrieved", reviewService.getCourseReviews(courseId)));
     }
 
@@ -27,18 +28,31 @@ public class ReviewController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CourseReview>> addReview(
-            @RequestParam UUID studentId,
+    public ResponseEntity<ApiResponse<CourseReviewDTO>> addReview(
+            @RequestParam(required = false) String studentId,
+            @RequestParam(required = false) String email,
             @RequestParam UUID courseId,
-            @RequestParam Integer rating,
+            @RequestParam(defaultValue = "5") Integer rating,
             @RequestParam(required = false) String comment
     ) {
-        return ResponseEntity.ok(ApiResponse.success("Review submitted", reviewService.addReview(studentId, courseId, rating, comment)));
+        UUID uid = parseUUID(studentId);
+        return ResponseEntity.ok(ApiResponse.success("Review submitted successfully", reviewService.addReview(uid, email, courseId, rating, comment)));
     }
 
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<String>> deleteReview(@PathVariable UUID reviewId) {
         reviewService.deleteReview(reviewId);
         return ResponseEntity.ok(ApiResponse.success("Review deleted successfully", "SUCCESS"));
+    }
+
+    private UUID parseUUID(String str) {
+        if (str == null || str.isBlank() || str.equals("undefined") || str.equals("null") || str.equals("current")) {
+            return null;
+        }
+        try {
+            return UUID.fromString(str);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

@@ -191,11 +191,11 @@ const Dashboard = () => {
               )}
             </div>
 
-            <div className="card">
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>
                 Quick Navigation
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', flex: 1, alignItems: 'center' }}>
                 <a
                   href="/student/my-courses"
                   style={{
@@ -205,11 +205,24 @@ const Dashboard = () => {
                     color: 'var(--text-primary)',
                     fontWeight: '600',
                     fontSize: '14px',
-                    border: '1px solid var(--border-color)'
+                    border: '1px solid var(--border-color)',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
                   }}
                 >
-                  📚 My Courses
+                  <span>📚</span>
+                  <span>My Courses</span>
                 </a>
+
                 <a
                   href="/student/certificates"
                   style={{
@@ -219,11 +232,24 @@ const Dashboard = () => {
                     color: 'var(--text-primary)',
                     fontWeight: '600',
                     fontSize: '14px',
-                    border: '1px solid var(--border-color)'
+                    border: '1px solid var(--border-color)',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
                   }}
                 >
-                  🎓 Certificates
+                  <span>🎓</span>
+                  <span>Certificates</span>
                 </a>
+
                 <a
                   href="/student/wishlist"
                   style={{
@@ -233,11 +259,24 @@ const Dashboard = () => {
                     color: 'var(--text-primary)',
                     fontWeight: '600',
                     fontSize: '14px',
-                    border: '1px solid var(--border-color)'
+                    border: '1px solid var(--border-color)',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
                   }}
                 >
-                  ❤️ Wishlist
+                  <span>❤️</span>
+                  <span>Wishlist</span>
                 </a>
+
                 <a
                   href="/student/purchase-history"
                   style={{
@@ -247,10 +286,22 @@ const Dashboard = () => {
                     color: 'var(--text-primary)',
                     fontWeight: '600',
                     fontSize: '14px',
-                    border: '1px solid var(--border-color)'
+                    border: '1px solid var(--border-color)',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
                   }}
                 >
-                  💳 Purchases
+                  <span>💳</span>
+                  <span>Purchases</span>
                 </a>
               </div>
             </div>

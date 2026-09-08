@@ -270,6 +270,21 @@ const Navbar = () => {
                     >
                       🎓 Certificates
                     </a>
+                    <a
+                      href="/student/purchase-history"
+                      onClick={() => setDropdownOpen(false)}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      💳 Purchases & Invoices
+                    </a>
 
                     <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
 
@@ -452,6 +467,25 @@ const Navbar = () => {
                 }}
               >
                 🎓 My Certificates
+              </a>
+
+              <a
+                href="/student/purchase-history"
+                onClick={closeMobileMenu}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-secondary)',
+                  fontWeight: '700',
+                  fontSize: '15px',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}
+              >
+                💳 My Purchases & Invoices
               </a>
             </>
           )}
