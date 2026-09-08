@@ -18,6 +18,8 @@ public class QuizEvaluationResponse {
     private int correctCount;
     private int scorePercentage;
     private int passingScore;
+    private int strikes;
+    private boolean isDisqualified;
 
     @JsonProperty("isPassed")
     private boolean isPassed;

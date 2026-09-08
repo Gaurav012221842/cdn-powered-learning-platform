@@ -358,8 +358,9 @@ const CourseDetails = () => {
     if (raw) claimedCampaign = JSON.parse(raw);
   } catch (e) { }
 
-  const discountPct = course?.discountPercentage || claimedCampaign?.discountPercentage || 25;
-  const discountedPriceUsd = Math.max(1, rawPriceUsd * (1 - discountPct / 100));
+  const discountPct = course?.discountPercentage || claimedCampaign?.discountPercentage || 0;
+  const hasDiscount = discountPct > 0;
+  const discountedPriceUsd = hasDiscount ? Math.max(1, rawPriceUsd * (1 - discountPct / 100)) : rawPriceUsd;
   const discountedPriceInr = Math.round(discountedPriceUsd * 83);
 
   const currentlyEnrolled = isEnrolled || localStorage.getItem(`enrolled_${courseId}`) === 'true';
@@ -870,13 +871,17 @@ const CourseDetails = () => {
                     <div style={{ fontSize: '26px', fontWeight: '800', color: 'var(--primary)' }}>
                       ₹{discountedPriceInr} INR <span style={{ fontSize: '13px', opacity: 0.9 }}>(${discountedPriceUsd.toFixed(2)})</span>
                     </div>
-                    <div style={{ fontSize: '15px', textDecoration: 'line-through', color: 'var(--text-muted)' }}>
-                      ${rawPriceUsd.toFixed(2)}
+                    {hasDiscount && (
+                      <div style={{ fontSize: '15px', textDecoration: 'line-through', color: 'var(--text-muted)' }}>
+                        ${rawPriceUsd.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                  {hasDiscount && (
+                    <div style={{ fontSize: '12px', color: '#10b981', fontWeight: '700', marginTop: '6px' }}>
+                      🔥 {discountPct}% OFF Applied ({claimedCampaign?.name || 'Campaign Offer'})! You save ${(rawPriceUsd - discountedPriceUsd).toFixed(2)}
                     </div>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#10b981', fontWeight: '700', marginTop: '6px' }}>
-                    🔥 {discountPct}% OFF Applied ({claimedCampaign?.name || 'Campaign Offer'})! You save ${(rawPriceUsd - discountedPriceUsd).toFixed(2)}
-                  </div>
+                  )}
                 </div>
 
                 <button
@@ -1000,64 +1005,20 @@ const CourseDetails = () => {
 
               {/* QUIZ Viewer */}
               {activeLesson.lessonType === 'QUIZ' && (
-                <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '14px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  <h3 style={{ fontSize: '17px', fontWeight: '800', margin: 0 }}>
-                    📝 Quiz: Test Your Knowledge
-                  </h3>
-
-                  {activeQuizObj && activeQuizObj.questions && activeQuizObj.questions.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      {activeQuizObj.questions.map((q, qIdx) => (
-                        <div key={qIdx} style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                          <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)', marginBottom: '10px' }}>
-                            Q{qIdx + 1}. {q.question}
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {q.options && q.options.map((opt, optIdx) => (
-                              <label
-                                key={optIdx}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '10px',
-                                  padding: '8px 12px',
-                                  borderRadius: '8px',
-                                  border: '1px solid var(--border-color)',
-                                  background: quizAnswers[qIdx] === optIdx ? 'var(--primary-light)' : 'transparent',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                <input
-                                  type="radio"
-                                  name={`quiz-${qIdx}`}
-                                  checked={quizAnswers[qIdx] === optIdx}
-                                  onChange={() => setQuizAnswers((prev) => ({ ...prev, [qIdx]: optIdx }))}
-                                />
-                                <span style={{ fontSize: '13px', fontWeight: '600' }}>{opt}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-
-                      <button
-                        onClick={() => handleQuizSubmit(activeQuizObj.questions)}
-                        className="btn btn-primary"
-                        style={{ alignSelf: 'flex-start', padding: '10px 20px', fontSize: '13px', fontWeight: '700' }}
-                      >
-                        ✅ Submit Quiz
-                      </button>
-
-                      {quizScore && (
-                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', padding: '12px 16px', borderRadius: '8px', color: '#10b981', fontWeight: '700', fontSize: '14px' }}>
-                          🎯 Quiz Result: {quizScore.score} / {quizScore.total} Correct!
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p style={{ color: 'var(--text-muted)' }}>No questions configured for this quiz yet.</p>
-                  )}
-                </div>
+                <StudentQuizViewer
+                  quizData={activeLesson.quizData}
+                  courseId={courseId}
+                  lessonId={activeLesson.id}
+                  onComplete={(passed, pct, score, total) => {
+                    setQuizScore({ score, total });
+                    showToast(
+                      passed
+                        ? `🎉 Quiz Passed! ${score}/${total} Correct (${pct}%)`
+                        : `⚠️ Quiz Submitted. ${score}/${total} Correct (${pct}%). Review explanations below!`,
+                      passed ? 'success' : 'info'
+                    );
+                  }}
+                />
               )}
             </div>
           )}

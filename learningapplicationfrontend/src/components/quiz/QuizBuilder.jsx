@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 const SAMPLE_QUIZ_PRESET = {
   title: 'CDN & High-Performance Architecture Assessment',
   passingScore: 70,
+  timeLimitMinutes: 10,
   questions: [
     {
       question: 'What is the primary architectural purpose of a Content Delivery Network (CDN)?',
@@ -50,6 +51,7 @@ const QuizBuilder = ({ quizData, onChange }) => {
           return {
             title: parsed.title || 'Lesson Quiz',
             passingScore: parsed.passingScore || 70,
+            timeLimitMinutes: parsed.timeLimitMinutes || null,
             questions: parsed.questions
           };
         }
@@ -95,6 +97,7 @@ const QuizBuilder = ({ quizData, onChange }) => {
           setQuiz({
             title: parsed.title || 'Lesson Quiz',
             passingScore: parsed.passingScore || 70,
+            timeLimitMinutes: parsed.timeLimitMinutes || null,
             questions: parsed.questions
           });
         }
@@ -234,7 +237,7 @@ const QuizBuilder = ({ quizData, onChange }) => {
       {viewMode === 'visual' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Settings bar */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', background: 'var(--bg-card, #0f172a)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color, #334155)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', background: 'var(--bg-card, #0f172a)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color, #334155)' }}>
             <div>
               <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary, #94a3b8)', textTransform: 'uppercase' }}>Quiz Title</label>
               <input
@@ -256,6 +259,19 @@ const QuizBuilder = ({ quizData, onChange }) => {
                 style={{ fontSize: '13px', marginTop: '4px', padding: '8px 12px' }}
                 value={quiz.passingScore || 70}
                 onChange={(e) => notifyChange({ ...quiz, passingScore: parseInt(e.target.value) || 70 })}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary, #94a3b8)', textTransform: 'uppercase' }}>Time Limit (Min)</label>
+              <input
+                type="number"
+                min="1"
+                max="180"
+                className="form-input"
+                style={{ fontSize: '13px', marginTop: '4px', padding: '8px 12px' }}
+                value={quiz.timeLimitMinutes || ''}
+                placeholder={`Auto (${Math.max(3, Math.round(quiz.questions.length * 1.5))}m)`}
+                onChange={(e) => notifyChange({ ...quiz, timeLimitMinutes: e.target.value ? parseInt(e.target.value) : null })}
               />
             </div>
           </div>

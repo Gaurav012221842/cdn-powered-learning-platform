@@ -15,4 +15,6 @@ import java.util.UUID;
 public class QuizSubmissionRequest {
     private UUID lessonId;
     private Map<String, Integer> answers;
+    private Integer strikes;
+    private Boolean isDisqualified;
 }

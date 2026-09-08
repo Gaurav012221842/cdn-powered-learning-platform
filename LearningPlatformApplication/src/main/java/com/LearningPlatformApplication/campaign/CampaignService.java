@@ -21,15 +21,19 @@ public class CampaignService {
 
     @Cacheable(value = "active_campaigns", key = "'active'")
     public List<Campaign> getActiveCampaigns() {
-        return campaignRepository.findByIsActiveTrue();
+        java.time.ZonedDateTime now = java.time.ZonedDateTime.now();
+        return campaignRepository.findByIsActiveTrue().stream()
+                .filter(c -> c.getEndDate() == null || c.getEndDate().isAfter(now))
+                .toList();
     }
 
     @CacheEvict(value = "active_campaigns", allEntries = true)
     public Campaign createCampaign(CreateCampaignRequest request) {
         Campaign campaign = Campaign.builder()
+                .id(UUID.randomUUID())
                 .name(request.getName())
                 .discountPercentage(request.getDiscountPercentage())
-                .startDate(request.getStartDate())
+                .startDate(request.getStartDate() != null ? request.getStartDate() : java.time.ZonedDateTime.now())
                 .endDate(request.getEndDate())
                 .isActive(true)
                 .build();

@@ -1,23 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { campaignService } from '../../services/campaignService';
 
-const fallbackActiveCampaigns = [
-  {
-    id: 'c-active-1',
-    name: 'Summer Learning Blast 2026',
-    discountPercentage: 25,
-    endDate: '2026-08-31T23:59:59Z',
-    isActive: true
-  },
-  {
-    id: 'c-active-2',
-    name: 'Independence Day Special Flash Sale',
-    discountPercentage: 40,
-    endDate: '2026-08-20T23:59:59Z',
-    isActive: true
-  }
-];
-
 const OfferBanner = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -28,13 +11,22 @@ const OfferBanner = () => {
       .then((res) => {
         if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
           setCampaigns(res.data);
+          // Automatically save first active campaign to storage if not already claimed
+          const existing = localStorage.getItem('claimedCampaign');
+          if (!existing) {
+            localStorage.setItem('claimedCampaign', JSON.stringify(res.data[0]));
+            window.dispatchEvent(new Event('claimedCampaignChanged'));
+          }
         } else {
-          setCampaigns(fallbackActiveCampaigns);
+          setCampaigns([]);
+          // Clear any stale local claimed campaign if no active campaigns exist in backend
+          localStorage.removeItem('claimedCampaign');
+          window.dispatchEvent(new Event('claimedCampaignChanged'));
         }
       })
       .catch((err) => {
-        console.warn('Could not fetch active campaigns for student banner:', err);
-        setCampaigns(fallbackActiveCampaigns);
+        console.warn('Could not fetch active campaigns from backend:', err);
+        setCampaigns([]);
       });
   }, []);
 

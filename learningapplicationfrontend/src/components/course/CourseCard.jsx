@@ -298,8 +298,9 @@ const CourseCard = ({ course, onWishlistChange }) => {
           if (raw) claimedCampaign = JSON.parse(raw);
         } catch (e) {}
 
-        const discountPct = course?.discountPercentage || claimedCampaign?.discountPercentage || 25;
-        const discountedPrice = Math.max(1, rawPrice * (1 - discountPct / 100));
+        const discountPct = course?.discountPercentage || claimedCampaign?.discountPercentage || 0;
+        const hasDiscount = discountPct > 0;
+        const discountedPrice = hasDiscount ? Math.max(1, rawPrice * (1 - discountPct / 100)) : rawPrice;
 
         return (
           <div
@@ -316,13 +317,17 @@ const CourseCard = ({ course, onWishlistChange }) => {
                 <span style={{ fontWeight: '800', fontSize: '20px', color: 'var(--primary)' }}>
                   {formatPrice(discountedPrice)}
                 </span>
-                <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', fontSize: '13px' }}>
-                  {formatPrice(rawPrice)}
-                </span>
+                {hasDiscount && (
+                  <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    {formatPrice(rawPrice)}
+                  </span>
+                )}
               </div>
-              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700' }}>
-                🔥 {discountPct}% OFF {claimedCampaign ? 'Claimed' : 'Special Offer'}
-              </span>
+              {hasDiscount && (
+                <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700' }}>
+                  🔥 {discountPct}% OFF {claimedCampaign ? `(${claimedCampaign.name})` : 'Special Offer'}
+                </span>
+              )}
             </div>
             <button
               className="btn btn-primary"

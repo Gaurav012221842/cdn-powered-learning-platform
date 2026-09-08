@@ -4,33 +4,6 @@ import Footer from '../../../components/layout/Footer';
 import { AuthContext } from '../../../context/AuthContext';
 import { campaignService } from '../../../services/campaignService';
 
-const fallbackCampaigns = [
-  {
-    id: 'camp-101',
-    name: 'Summer Learning Blast 2026',
-    discountPercentage: 25,
-    startDate: '2026-06-01T00:00:00Z',
-    endDate: '2026-08-31T23:59:59Z',
-    isActive: true
-  },
-  {
-    id: 'camp-102',
-    name: 'Independence Day Special Flash Sale',
-    discountPercentage: 40,
-    startDate: '2026-08-14T00:00:00Z',
-    endDate: '2026-08-20T23:59:59Z',
-    isActive: true
-  },
-  {
-    id: 'camp-103',
-    name: 'Back to School Tech Mastery',
-    discountPercentage: 15,
-    startDate: '2026-09-01T00:00:00Z',
-    endDate: '2026-09-15T23:59:59Z',
-    isActive: false
-  }
-];
-
 const CampaignManagement = () => {
   const { showToast } = useContext(AuthContext);
   const [campaigns, setCampaigns] = useState([]);
@@ -52,15 +25,15 @@ const CampaignManagement = () => {
     setLoading(true);
     campaignService.getAllCampaigns()
       .then((res) => {
-        if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res && res.data && Array.isArray(res.data)) {
           setCampaigns(res.data);
         } else {
-          setCampaigns(fallbackCampaigns);
+          setCampaigns([]);
         }
       })
       .catch((err) => {
         console.warn('Could not fetch campaigns from backend:', err);
-        setCampaigns(fallbackCampaigns);
+        setCampaigns([]);
       })
       .finally(() => setLoading(false));
   };

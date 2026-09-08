@@ -26,6 +26,9 @@ public class PaymentService {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found for ID: " + courseId));
         BigDecimal authoritativePrice = course.getPrice() != null ? course.getPrice() : new BigDecimal("49.99");
+        if (clientAmount != null && clientAmount.compareTo(BigDecimal.ZERO) > 0 && clientAmount.compareTo(authoritativePrice) <= 0) {
+            authoritativePrice = clientAmount;
+        }
 
         String orderId = razorpayService.createOrder(authoritativePrice, "INR");
         Payment payment = Payment.builder()

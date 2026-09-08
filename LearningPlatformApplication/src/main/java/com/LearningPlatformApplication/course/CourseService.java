@@ -269,7 +269,9 @@ public class CourseService {
 
             int totalQuestions = results.size();
             int scorePercentage = totalQuestions > 0 ? (int) Math.round(((double) correctCount / totalQuestions) * 100) : 0;
-            boolean isPassed = scorePercentage >= passingScore;
+            int strikes = request != null && request.getStrikes() != null ? request.getStrikes() : 0;
+            boolean isDisqualified = request != null && Boolean.TRUE.equals(request.getIsDisqualified());
+            boolean isPassed = !isDisqualified && scorePercentage >= passingScore;
 
             return com.LearningPlatformApplication.course.dto.QuizEvaluationResponse.builder()
                     .title(title)
@@ -277,6 +279,8 @@ public class CourseService {
                     .correctCount(correctCount)
                     .scorePercentage(scorePercentage)
                     .passingScore(passingScore)
+                    .strikes(strikes)
+                    .isDisqualified(isDisqualified)
                     .isPassed(isPassed)
                     .results(results)
                     .build();
