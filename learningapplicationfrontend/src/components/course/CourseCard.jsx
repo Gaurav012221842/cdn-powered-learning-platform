@@ -108,6 +108,10 @@ const CourseCard = ({ course, onWishlistChange }) => {
     }
   };
 
+  const thumbnailUrl = course?.thumbnailUrl || course?.imageUrl || course?.thumbnail || course?.coverImage;
+  const [imageError, setImageError] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <div
       className="card"
@@ -120,30 +124,77 @@ const CourseCard = ({ course, onWishlistChange }) => {
         cursor: 'pointer',
         height: '100%',
         overflow: 'hidden',
-        position: 'relative'
+        position: 'relative',
+        boxShadow: isHovered ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
+        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)'
       }}
       onClick={() => (window.location.href = `/courses/${course?.id || 1}`)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div
         style={{
-          height: '160px',
+          height: '175px',
           background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
           borderRadius: 'var(--radius-md)',
-          padding: '16px',
+          padding: '14px 16px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           color: '#ffffff',
-          position: 'relative'
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+        {/* Background Thumbnail Image */}
+        {thumbnailUrl && !imageError && (
+          <img
+            src={thumbnailUrl}
+            alt={course?.title || 'Course Thumbnail'}
+            onError={() => setImageError(true)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: 0,
+              transform: isHovered ? 'scale(1.08)' : 'scale(1)',
+              transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          />
+        )}
+
+        {/* Gradient dark overlay for text readability */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: thumbnailUrl && !imageError
+              ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.1) 40%, rgba(15, 23, 42, 0.85) 100%)'
+              : 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+            zIndex: 1,
+            pointerEvents: 'none'
+          }}
+        />
+
+        {/* Top bar: Category Badge + Wishlist button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', position: 'relative', zIndex: 2 }}>
           <span
             className="badge"
             style={{
-              background: 'rgba(255, 255, 255, 0.25)',
+              background: 'rgba(15, 23, 42, 0.65)',
               backdropFilter: 'blur(8px)',
-              color: '#ffffff'
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              fontWeight: '700',
+              fontSize: '11px',
+              letterSpacing: '0.3px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
             }}
           >
             {category}
@@ -156,24 +207,24 @@ const CourseCard = ({ course, onWishlistChange }) => {
             aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
             title={isWishlisted ? "Remove from Wishlist" : "Save to Wishlist"}
             style={{
-              background: isWishlisted ? '#ef4444' : 'rgba(0, 0, 0, 0.35)',
+              background: isWishlisted ? '#ef4444' : 'rgba(15, 23, 42, 0.65)',
               border: isWishlisted ? 'none' : '1px solid rgba(255, 255, 255, 0.3)',
               color: '#ffffff',
-              width: '36px',
-              height: '36px',
+              width: '34px',
+              height: '34px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              fontSize: '18px',
+              fontSize: '16px',
               transition: 'all 0.2s ease',
-              backdropFilter: 'blur(6px)',
-              boxShadow: isWishlisted ? '0 4px 12px rgba(239, 68, 68, 0.4)' : 'none',
+              backdropFilter: 'blur(8px)',
+              boxShadow: isWishlisted ? '0 4px 12px rgba(239, 68, 68, 0.4)' : '0 2px 6px rgba(0,0,0,0.3)',
               transform: isWishlisted ? 'scale(1.05)' : 'scale(1)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.15)';
+              e.currentTarget.style.transform = 'scale(1.18)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = isWishlisted ? 'scale(1.05)' : 'scale(1)';
@@ -183,9 +234,29 @@ const CourseCard = ({ course, onWishlistChange }) => {
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700' }}>
-          <span>⭐ {liveRating}</span>
-          <span style={{ opacity: 0.85 }}>({liveReviews} {liveReviews === 1 ? 'review' : 'reviews'})</span>
+        {/* Bottom bar: Rating */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative', zIndex: 2 }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              background: 'rgba(15, 23, 42, 0.75)',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              fontSize: '12px',
+              fontWeight: '800',
+              color: '#fbbf24',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
+            }}
+          >
+            ⭐ {liveRating}
+          </span>
+          <span style={{ fontSize: '12px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+            ({liveReviews} {liveReviews === 1 ? 'review' : 'reviews'})
+          </span>
         </div>
       </div>
 

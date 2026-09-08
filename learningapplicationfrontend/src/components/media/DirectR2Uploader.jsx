@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { API_V1_URL } from '../../services/api';
 
 const DirectR2Uploader = ({ mediaType = 'IMAGE', onUploadComplete }) => {
+  const [activeType, setActiveType] = useState(mediaType || 'IMAGE');
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -13,6 +14,12 @@ const DirectR2Uploader = ({ mediaType = 'IMAGE', onUploadComplete }) => {
 
   const fileInputRef = useRef(null);
   const xhrRef = useRef(null);
+
+  useEffect(() => {
+    if (mediaType) {
+      setActiveType(mediaType.toUpperCase());
+    }
+  }, [mediaType]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -66,7 +73,7 @@ const DirectR2Uploader = ({ mediaType = 'IMAGE', onUploadComplete }) => {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('mediaType', mediaType);
+    formData.append('mediaType', activeType);
 
     const xhr = new XMLHttpRequest();
     xhrRef.current = xhr;
@@ -95,7 +102,7 @@ const DirectR2Uploader = ({ mediaType = 'IMAGE', onUploadComplete }) => {
             mediaId,
             cdnUrl,
             filename: file.name,
-            type: mediaType,
+            type: activeType,
             size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
             uploadedAt: new Date().toLocaleDateString(),
             uploadedTime: new Date().toLocaleTimeString()
@@ -155,6 +162,24 @@ const DirectR2Uploader = ({ mediaType = 'IMAGE', onUploadComplete }) => {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
+  const getAcceptTypes = () => {
+    switch (activeType) {
+      case 'VIDEO':
+      case 'REEL':
+        return 'video/*,.mp4,.mov,.webm,.mkv,.avi,.m4v';
+      case 'IMAGE':
+      case 'PHOTO':
+        return 'image/*,.jpg,.jpeg,.png,.webp,.gif,.svg';
+      case 'PDF':
+      case 'DOCUMENT':
+        return '.pdf,.doc,.docx,application/pdf';
+      case 'AUDIO':
+        return 'audio/*,.mp3,.wav,.aac,.ogg,.m4a';
+      default:
+        return '*/*';
+    }
+  };
+
   return (
     <div
       className="card animate-fade-in"
@@ -164,19 +189,55 @@ const DirectR2Uploader = ({ mediaType = 'IMAGE', onUploadComplete }) => {
         gap: '20px',
         border: '2px dashed var(--border-color)',
         borderRadius: 'var(--radius-xl)',
-        padding: '32px'
+        padding: '24px'
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
-            Upload Asset ({mediaType})
+          <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+            Upload Asset to Cloudflare R2
           </h3>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            High-speed Cloudflare R2 direct stream uploader with real-time percentage progress.
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
+            Upload videos, PDFs, images or documents with real-time progress.
           </p>
         </div>
-        <span className="badge badge-primary">{mediaType}</span>
+      </div>
+
+      {/* Media Type Selector Tabs */}
+      <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-secondary)', padding: '6px', borderRadius: '12px' }}>
+        {[
+          { id: 'VIDEO', label: '📹 Video' },
+          { id: 'PDF', label: '📄 PDF' },
+          { id: 'IMAGE', label: '🖼️ Image' },
+          { id: 'AUDIO', label: '🎵 Audio' }
+        ].map((t) => {
+          const isSelected = activeType === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              disabled={uploading}
+              onClick={() => {
+                setActiveType(t.id);
+                handleClearSelectedFile();
+              }}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: 'none',
+                background: isSelected ? 'var(--primary)' : 'transparent',
+                color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                fontWeight: isSelected ? '800' : '600',
+                fontSize: '13px',
+                cursor: uploading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
       {error && (
@@ -208,17 +269,7 @@ const DirectR2Uploader = ({ mediaType = 'IMAGE', onUploadComplete }) => {
           id="file-upload-input"
           onChange={handleFileChange}
           disabled={uploading}
-          accept={
-            mediaType === 'VIDEO' || mediaType === 'REEL'
-              ? 'video/*'
-              : mediaType === 'IMAGE'
-              ? 'image/*'
-              : mediaType === 'PDF' || mediaType === 'DOCUMENT'
-              ? '.pdf,.doc,.docx'
-              : mediaType === 'AUDIO'
-              ? 'audio/*'
-              : '*/*'
-          }
+          accept={getAcceptTypes()}
           style={{ width: '100%', cursor: uploading ? 'not-allowed' : 'pointer', color: 'var(--text-primary)' }}
         />
 

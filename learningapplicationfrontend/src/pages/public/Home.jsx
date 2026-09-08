@@ -15,7 +15,8 @@ const fallbackCourses = [
     instructor: 'Gaurav Kumar',
     rating: 4.9,
     students: 2450,
-    category: 'Backend & Cloud'
+    category: 'Backend & Cloud',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&auto=format&fit=crop&q=80'
   },
   {
     id: '2',
@@ -25,7 +26,8 @@ const fallbackCourses = [
     instructor: 'Gaurav Kumar',
     rating: 4.8,
     students: 3120,
-    category: 'Full Stack'
+    category: 'Full Stack',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=80'
   },
   {
     id: '3',
@@ -35,7 +37,8 @@ const fallbackCourses = [
     instructor: 'Gaurav Kumar',
     rating: 5.0,
     students: 1890,
-    category: 'Media & CDN'
+    category: 'Media & CDN',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&auto=format&fit=crop&q=80'
   }
 ];
 

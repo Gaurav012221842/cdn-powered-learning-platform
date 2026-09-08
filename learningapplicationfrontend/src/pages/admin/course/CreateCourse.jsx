@@ -362,7 +362,7 @@ const CreateCourse = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => handleOpenR2Upload({ field: 'cover' })}
+                      onClick={() => handleOpenR2Upload({ field: 'cover', mediaType: 'IMAGE' })}
                       className="btn btn-secondary"
                       style={{ whiteSpace: 'nowrap', fontSize: '12px' }}
                     >
@@ -481,8 +481,13 @@ const CreateCourse = () => {
                                   value={les.contentUrl}
                                   onChange={(e) => updateLessonField(cIdx, lIdx, 'contentUrl', e.target.value)}
                                 />
-                                <button type="button" onClick={() => handleOpenR2Upload({ chapIdx: cIdx, lesIdx: lIdx, field: 'contentUrl' })} className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '11px', whiteSpace: 'nowrap' }}>
-                                  ☁️ R2
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenR2Upload({ chapIdx: cIdx, lesIdx: lIdx, field: 'contentUrl', mediaType: 'VIDEO' })}
+                                  className="btn btn-secondary"
+                                  style={{ padding: '6px 10px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                                >
+                                  ☁️ Video R2
                                 </button>
                               </div>
                             </div>
@@ -499,8 +504,13 @@ const CreateCourse = () => {
                                   value={les.videoThumbnailUrl}
                                   onChange={(e) => updateLessonField(cIdx, lIdx, 'videoThumbnailUrl', e.target.value)}
                                 />
-                                <button type="button" onClick={() => handleOpenR2Upload({ chapIdx: cIdx, lesIdx: lIdx, field: 'videoThumbnailUrl' })} className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '11px', whiteSpace: 'nowrap' }}>
-                                  ☁️ R2
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenR2Upload({ chapIdx: cIdx, lesIdx: lIdx, field: 'videoThumbnailUrl', mediaType: 'IMAGE' })}
+                                  className="btn btn-secondary"
+                                  style={{ padding: '6px 10px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                                >
+                                  ☁️ Thumb R2
                                 </button>
                               </div>
                             </div>
@@ -509,18 +519,30 @@ const CreateCourse = () => {
 
                         {(les.lessonType === 'PDF' || les.lessonType === 'IMAGE') && (
                           <div>
-                            <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>Asset CDN Link</label>
+                            <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                              {les.lessonType === 'PDF' ? '📄 PDF Document CDN Link' : '🖼️ Diagram / Image CDN Link'}
+                            </label>
                             <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
                               <input
                                 type="text"
-                                placeholder="https://pub-7bfd.../file"
+                                placeholder={les.lessonType === 'PDF' ? "https://pub-7bfd.../document.pdf" : "https://pub-7bfd.../diagram.png"}
                                 className="form-input"
                                 style={{ fontSize: '13px' }}
                                 value={les.contentUrl}
                                 onChange={(e) => updateLessonField(cIdx, lIdx, 'contentUrl', e.target.value)}
                               />
-                              <button type="button" onClick={() => handleOpenR2Upload({ chapIdx: cIdx, lesIdx: lIdx, field: 'contentUrl' })} className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '11px', whiteSpace: 'nowrap' }}>
-                                ☁️ Upload Asset
+                              <button
+                                type="button"
+                                onClick={() => handleOpenR2Upload({
+                                  chapIdx: cIdx,
+                                  lesIdx: lIdx,
+                                  field: 'contentUrl',
+                                  mediaType: les.lessonType === 'PDF' ? 'PDF' : 'IMAGE'
+                                })}
+                                className="btn btn-secondary"
+                                style={{ padding: '6px 10px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                              >
+                                {les.lessonType === 'PDF' ? '☁️ Upload PDF' : '☁️ Upload Image'}
                               </button>
                             </div>
                           </div>
@@ -566,16 +588,19 @@ const CreateCourse = () => {
           {/* Cloudflare R2 Selection Modal */}
           {showR2Modal && (
             <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '24px' }}>
-              <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '28px', maxWidth: '540px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '28px', maxWidth: '580px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0 }}>
-                    ☁️ Upload Asset to Cloudflare R2
+                    ☁️ Upload to Cloudflare R2 ({uploadTargetKey?.mediaType || 'Media'})
                   </h3>
                   <button onClick={() => setShowR2Modal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>
                     ✖
                   </button>
                 </div>
-                <DirectR2Uploader onUploadComplete={handleR2Complete} />
+                <DirectR2Uploader
+                  mediaType={uploadTargetKey?.mediaType || 'IMAGE'}
+                  onUploadComplete={handleR2Complete}
+                />
               </div>
             </div>
           )}
