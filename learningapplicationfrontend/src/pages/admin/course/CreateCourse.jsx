@@ -4,7 +4,7 @@ import Footer from '../../../components/layout/Footer';
 import DirectR2Uploader from '../../../components/media/DirectR2Uploader';
 import QuizBuilder from '../../../components/quiz/QuizBuilder';
 import { AuthContext } from '../../../context/AuthContext';
-import { API_V1_URL } from '../../../services/api';
+import { API_V1_URL, getCookie } from '../../../services/api';
 
 const CreateCourse = () => {
   const { showToast } = useContext(AuthContext);

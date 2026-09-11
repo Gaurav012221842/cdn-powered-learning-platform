@@ -8,7 +8,7 @@ import CertificateModal from '../../components/certificate/CertificateModal';
 import StudentQuizViewer from '../../components/quiz/StudentQuizViewer';
 import CourseReviewsSection from '../../components/course/CourseReviewsSection';
 import { AuthContext } from '../../context/AuthContext';
-import { API_V1_URL, fetchStudentProgress, toggleLessonProgress } from '../../services/api';
+import { API_V1_URL, fetchStudentProgress, toggleLessonProgress, getCookie } from '../../services/api';
 
 const isQuizLesson = (les) => {
   if (!les) return false;
