@@ -33,14 +33,19 @@ public class CourseService {
     @Cacheable(value = "courses_all", key = "'all'")
     public List<CourseResponse> getAllCourses() {
         return courseRepository.findAll().stream()
+                .filter(course -> !"DELETED".equalsIgnoreCase(course.getStatus()))
                 .map(courseMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
     public CourseResponse getCourseById(UUID id) {
         Course course = courseRepository.findById(id)
-                .orElseGet(() -> courseRepository.findAll().stream().findFirst()
-                        .orElseThrow(() -> new RuntimeException("Course not found for ID: " + id)));
+                .orElseThrow(() -> new RuntimeException("Course not found for ID: " + id));
+
+        if ("DELETED".equalsIgnoreCase(course.getStatus())) {
+            throw new RuntimeException("Course not found for ID: " + id);
+        }
+
         return courseMapper.toResponse(course);
     }
 
@@ -160,21 +165,15 @@ public class CourseService {
     @Transactional
     @CacheEvict(value = {"courses_all", "course_details", "course_lessons", "course_pricing", "wishlist_check"}, allEntries = true)
     public void deleteCourse(UUID id) {
-        if (!courseRepository.existsById(id)) {
-            throw new RuntimeException("Course not found");
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        if ("DELETED".equalsIgnoreCase(course.getStatus())) {
+            return;
         }
 
-        jdbcTemplate.update("DELETE FROM payments WHERE course_id = ?", id);
-        jdbcTemplate.update("DELETE FROM enrollments WHERE course_id = ?", id);
-        jdbcTemplate.update("DELETE FROM campaign_courses WHERE course_id = ?", id);
-        jdbcTemplate.update("DELETE FROM wishlists WHERE course_id = ?", id);
-        jdbcTemplate.update("DELETE FROM course_pricing WHERE course_id = ?", id);
-        jdbcTemplate.update("DELETE FROM course_reviews WHERE course_id = ?", id);
-        jdbcTemplate.update("DELETE FROM course_progress WHERE course_id = ?", id);
-        jdbcTemplate.update("DELETE FROM certificates WHERE course_id = ?", id);
-        jdbcTemplate.update("DELETE FROM lessons WHERE course_id = ? OR chapter_id IN (SELECT id FROM chapters WHERE course_id = ?)", id, id);
-        jdbcTemplate.update("DELETE FROM chapters WHERE course_id = ?", id);
-        jdbcTemplate.update("DELETE FROM courses WHERE id = ?", id);
+        course.setStatus("DELETED");
+        courseRepository.save(course);
     }
 
     public com.LearningPlatformApplication.course.dto.QuizEvaluationResponse evaluateQuiz(UUID courseId, com.LearningPlatformApplication.course.dto.QuizSubmissionRequest request) {
