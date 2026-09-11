@@ -87,6 +87,7 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
   security:
     master-admin-email: ${MASTER_ADMIN_EMAIL:serversidegaurav@gmail.com}
+    cookie-secure: ${COOKIE_SECURE:false}
 
 jwt:
   secret: ${JWT_SECRET:default_jwt_secret_key_for_development_environment_only}

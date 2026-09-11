@@ -3,7 +3,7 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import CourseCard from '../../components/course/CourseCard';
 import { AuthContext } from '../../context/AuthContext';
-import { API_V1_URL } from '../../services/api';
+import { API_V1_URL, getCookie } from '../../services/api';
 
 const Wishlist = () => {
   const { user } = useContext(AuthContext);
@@ -18,7 +18,7 @@ const Wishlist = () => {
       const savedUser = user || JSON.parse(localStorage.getItem('user') || '{}');
       const studentId = savedUser?.id || savedUser?.userId || 'current';
       const email = savedUser?.email || '';
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       // 1. Fetch courses catalog

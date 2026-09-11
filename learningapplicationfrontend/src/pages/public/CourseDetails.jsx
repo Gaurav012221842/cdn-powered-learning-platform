@@ -121,7 +121,7 @@ const CourseDetails = () => {
 
     const studentId = user?.id || '';
     const userEmail = user?.email || '';
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     // Step 1: Fetch Course details (authenticates enrolled students for unlocked media)
@@ -177,7 +177,7 @@ const CourseDetails = () => {
     if (courseId && user) {
       const studentId = user.id || '';
       const email = user.email || '';
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       fetch(`${API_V1_URL}/wishlists/check?courseId=${courseId}${studentId ? `&studentId=${studentId}` : ''}${email ? `&email=${encodeURIComponent(email)}` : ''}`, { headers })
         .then((r) => r.json())
@@ -213,7 +213,7 @@ const CourseDetails = () => {
 
     const studentId = user.id || '';
     const email = user.email || '';
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     const nextState = !isWishlisted;
@@ -272,7 +272,7 @@ const CourseDetails = () => {
     try {
       const studentId = user?.id || '';
       const userEmail = user?.email || '';
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
       // 1. Direct enrollment in PostgreSQL

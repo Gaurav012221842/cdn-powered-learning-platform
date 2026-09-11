@@ -1,10 +1,10 @@
 import { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { isJwtExpired, clearAuthSession } from '../../services/api';
+import { isJwtExpired, clearAuthSession, getCookie } from '../../services/api';
 
 const ProtectedRoute = ({ children, requireRole }) => {
   const { user } = useContext(AuthContext);
-  const token = localStorage.getItem('token');
+  const token = getCookie('token');
   const loginTime = localStorage.getItem('loginTimestamp');
   const MAX_SESSION_MS = 24 * 60 * 60 * 1000; // 24 Hours / 1 Day
 

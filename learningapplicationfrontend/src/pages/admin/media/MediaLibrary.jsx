@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../../components/layout/Navbar';
 import Footer from '../../../components/layout/Footer';
 import Button from '../../../components/common/Button';
-import { API_V1_URL, R2_CDN_URL } from '../../../services/api';
+import { API_V1_URL, R2_CDN_URL, getCookie } from '../../../services/api';
 
 const MediaLibrary = () => {
   const [mediaList, setMediaList] = useState([]);
@@ -44,7 +44,7 @@ const MediaLibrary = () => {
     if (!confirmDelete) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const res = await fetch(`${API_V1_URL}/media/${id}`, {
         method: 'DELETE',
         headers: {

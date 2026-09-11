@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import Navbar from '../../../components/layout/Navbar';
 import Footer from '../../../components/layout/Footer';
 import { AuthContext } from '../../../context/AuthContext';
-import { API_V1_URL } from '../../../services/api';
+import { API_V1_URL, getCookie } from '../../../services/api';
 
 const UserManagement = () => {
   const { user: currentUser, showToast, siteConfig } = useContext(AuthContext);
@@ -16,7 +16,7 @@ const UserManagement = () => {
 
   const fetchUsers = () => {
     setLoading(true);
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     fetch(`${API_V1_URL}/users`, {
       headers: {
         ...(token && { Authorization: `Bearer ${token}` })
@@ -63,7 +63,7 @@ const UserManagement = () => {
 
     setUpdatingId(targetUser.id);
     try {
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const res = await fetch(`${API_V1_URL}/users/${targetUser.id}/role`, {
         method: 'PUT',
         headers: {

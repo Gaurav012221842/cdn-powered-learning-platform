@@ -52,6 +52,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-postgrespassword}
       SPRING_REDIS_HOST: learning-platform-redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     depends_on:
       - learning-platform-db
       - learning-platform-redis

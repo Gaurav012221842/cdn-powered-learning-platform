@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { API_V1_URL } from '../../services/api';
+import { API_V1_URL, getCookie } from '../../services/api';
 
 const DirectR2Uploader = ({ mediaType = 'IMAGE', onUploadComplete }) => {
   const [activeType, setActiveType] = useState(mediaType || 'IMAGE');
@@ -140,7 +140,7 @@ const DirectR2Uploader = ({ mediaType = 'IMAGE', onUploadComplete }) => {
       setStatusMessage('Upload cancelled.');
     });
 
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     xhr.open('POST', `${API_V1_URL}/media/upload-file`);
     if (token) {
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);

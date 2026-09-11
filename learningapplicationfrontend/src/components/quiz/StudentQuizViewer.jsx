@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { API_V1_URL } from '../../services/api';
+import { API_V1_URL, getCookie } from '../../services/api';
 
 const MAX_VIOLATION_STRIKES = 3;
 
@@ -109,7 +109,7 @@ const StudentQuizViewer = ({ quizData, courseId, lessonId, onComplete }) => {
 
     if (courseId) {
       try {
-        const token = localStorage.getItem('token');
+        const token = getCookie('token');
         const res = await fetch(`${API_V1_URL}/courses/${courseId}/quiz/submit`, {
           method: 'POST',
           headers: {

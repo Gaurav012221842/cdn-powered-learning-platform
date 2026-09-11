@@ -5,7 +5,7 @@
  * Powered by IndexedDB session recovery, File.slice() streaming, and parallel concurrency
  */
 
-import { API_V1_URL } from '../../services/api';
+import { API_V1_URL, getCookie } from '../../services/api';
 
 const DB_NAME = 'VideoUploadManagerDB';
 const DB_VERSION = 1;
@@ -176,7 +176,7 @@ export class ResumableVideoUpload {
    * Request initiation from Spring Boot backend
    */
   async initiateBackendSession() {
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     const res = await fetch(`${API_V1_URL}/media/multipart/initiate`, {
       method: 'POST',
       headers: {
@@ -220,7 +220,7 @@ export class ResumableVideoUpload {
    */
   async syncWithR2Parts() {
     try {
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const res = await fetch(`${API_V1_URL}/media/multipart/parts?uploadSessionId=${this.uploadSessionId}`, {
         headers: {
           ...(token && { Authorization: `Bearer ${token}` })
@@ -320,7 +320,7 @@ export class ResumableVideoUpload {
       attempts++;
       try {
         // 1. Fetch Presigned Part URL from Spring Boot
-        const token = localStorage.getItem('token');
+        const token = getCookie('token');
         const urlRes = await fetch(`${API_V1_URL}/media/multipart/part-url`, {
           method: 'POST',
           headers: {
@@ -381,7 +381,7 @@ export class ResumableVideoUpload {
   }
 
   async putChunkViaBackend(partNumber, chunkBlob) {
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     const proxyUrl = `${API_V1_URL}/media/multipart/part-chunk?uploadSessionId=${this.uploadSessionId}&partNumber=${partNumber}`;
 
     const response = await fetch(proxyUrl, {
@@ -500,7 +500,7 @@ export class ResumableVideoUpload {
         });
       }
 
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const res = await fetch(`${API_V1_URL}/media/multipart/complete`, {
         method: 'POST',
         headers: {
@@ -559,7 +559,7 @@ export class ResumableVideoUpload {
 
     try {
       if (this.uploadSessionId) {
-        const token = localStorage.getItem('token');
+        const token = getCookie('token');
         await fetch(`${API_V1_URL}/media/multipart/abort?uploadSessionId=${this.uploadSessionId}`, {
           method: 'POST',
           headers: {

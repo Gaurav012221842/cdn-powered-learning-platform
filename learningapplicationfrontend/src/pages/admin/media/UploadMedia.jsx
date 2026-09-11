@@ -3,7 +3,7 @@ import Navbar from '../../../components/layout/Navbar';
 import Footer from '../../../components/layout/Footer';
 import DirectR2Uploader from '../../../components/media/DirectR2Uploader';
 import ResumableVideoUploader from '../../../components/video/ResumableVideoUploader';
-import { API_V1_URL, R2_CDN_URL } from '../../../services/api';
+import { API_V1_URL, R2_CDN_URL, getCookie } from '../../../services/api';
 
 const UploadMedia = () => {
   const [selectedMediaType, setSelectedMediaType] = useState('VIDEO');
@@ -61,7 +61,7 @@ const UploadMedia = () => {
     if (!confirmDelete) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const res = await fetch(`${API_V1_URL}/media/${assetId}`, {
         method: 'DELETE',
         headers: {

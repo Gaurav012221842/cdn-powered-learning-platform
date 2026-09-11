@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { AuthContext } from '../../context/AuthContext';
-import { API_V1_URL, fetchStudentProgress } from '../../services/api';
+import { API_V1_URL, fetchStudentProgress, getCookie } from '../../services/api';
 
 const EnrolledCourseCard = ({ course, pct, compLess, totalLess }) => {
   const [imgErr, setImgErr] = useState(false);
@@ -161,7 +161,7 @@ const MyCourses = () => {
     const savedUser = user || JSON.parse(localStorage.getItem('user') || '{}');
     const studentId = savedUser?.id || 'current';
     const userEmail = savedUser?.email || '';
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
 
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;

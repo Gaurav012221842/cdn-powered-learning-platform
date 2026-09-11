@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { API_V1_URL } from '../../services/api';
+import { API_V1_URL, getCookie } from '../../services/api';
 
 const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
   const { user, showToast } = useContext(AuthContext);
@@ -108,7 +108,7 @@ const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
   const completeEnrollmentInBackend = async (orderId, paymentId, signature) => {
     const studentId = user?.id || '';
     const userEmail = user?.email || '';
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
     // Verify payment in Spring Boot (automatically creates verified enrollment in PostgreSQL)
@@ -131,7 +131,7 @@ const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
     try {
       const studentId = user?.id || '';
       const userEmail = user?.email || '';
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
       // Initiate Order in Spring Boot
@@ -214,7 +214,7 @@ const RazorpayPaymentModal = ({ course, onClose, onSuccess }) => {
     try {
       const studentId = user?.id || '';
       const userEmail = user?.email || '';
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
       // 1. Initiate order in backend (server validates course price)

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import Navbar from '../../../components/layout/Navbar';
 import Footer from '../../../components/layout/Footer';
 import { AuthContext } from '../../../context/AuthContext';
-import { API_V1_URL } from '../../../services/api';
+import { API_V1_URL, getCookie } from '../../../services/api';
 
 const CourseManagement = () => {
   const { showToast } = useContext(AuthContext);
@@ -41,7 +41,7 @@ const CourseManagement = () => {
 
     setDeletingId(courseId);
     try {
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const res = await fetch(`${API_V1_URL}/courses/${courseId}`, {
         method: 'DELETE',
         headers: {

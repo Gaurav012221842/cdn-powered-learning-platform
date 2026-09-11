@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { API_V1_URL } from '../../services/api';
+import { API_V1_URL, getCookie } from '../../services/api';
 
 const CourseReviewsSection = ({ courseId, courseTitle, onSummaryChange }) => {
   const { user, showToast } = useContext(AuthContext);
@@ -68,7 +68,7 @@ const CourseReviewsSection = ({ courseId, courseTitle, onSummaryChange }) => {
     try {
       const studentId = user.id || '';
       const email = user.email || '';
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const url = `${API_V1_URL}/reviews?courseId=${courseId}&rating=${selectedStars}&comment=${encodeURIComponent(commentText.trim())}${studentId ? `&studentId=${studentId}` : ''}${email ? `&email=${encodeURIComponent(email)}` : ''}`;

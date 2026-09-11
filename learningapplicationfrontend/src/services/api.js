@@ -2,6 +2,22 @@ export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;
 export const R2_CDN_URL = process.env.REACT_APP_R2_CDN_URL || 'https://pub-7bfd051a435d43a480e08281cb9a1b86.r2.dev';
 
+export const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+};
+
+export const setCookie = (name, value, days = 1) => {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+};
+
+export const deleteCookie = (name) => {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+};
+
 export const isJwtExpired = (token) => {
   if (!token) return true;
   try {
@@ -16,14 +32,14 @@ export const isJwtExpired = (token) => {
 };
 
 export const clearAuthSession = () => {
-  localStorage.removeItem('token');
+  deleteCookie('token');
   localStorage.removeItem('user');
   localStorage.removeItem('loginTimestamp');
 };
 
 export const getStoredUser = () => {
   try {
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     const loginTime = localStorage.getItem('loginTimestamp');
     const MAX_SESSION_MS = 24 * 60 * 60 * 1000; // 24 Hours / 1 Day
 
@@ -40,7 +56,7 @@ export const getStoredUser = () => {
 };
 
 export const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = getCookie('token');
   if (token && isJwtExpired(token)) {
     clearAuthSession();
     return { 'Content-Type': 'application/json' };
@@ -63,6 +79,7 @@ export const apiFetch = async (endpoint, options = {}) => {
 
   const response = await fetch(url, {
     ...options,
+    credentials: 'include',
     headers
   });
 

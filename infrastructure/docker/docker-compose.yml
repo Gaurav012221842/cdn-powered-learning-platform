@@ -16,3 +16,22 @@ services:
     container_name: dev-redis
     ports:
       - "6379:6379"
+
+  app:
+    image: learning-platform-backend:local
+    build:
+      context: ../../LearningPlatformApplication
+      dockerfile: Dockerfile
+    container_name: local-learning-platform-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/learning_platform
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgrespassword
+      SPRING_REDIS_HOST: redis
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    depends_on:
+      - db
+      - redis

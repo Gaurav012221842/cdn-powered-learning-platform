@@ -220,7 +220,7 @@ const CreateCourse = () => {
         chapters: formattedChapters
       };
 
-      const token = localStorage.getItem('token');
+      const token = getCookie('token');
       const endpoint = editCourseId ? `${API_V1_URL}/courses/${editCourseId}` : `${API_V1_URL}/courses`;
       const method = editCourseId ? 'PUT' : 'POST';
 

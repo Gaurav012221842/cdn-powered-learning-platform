@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { apiFetch, isJwtExpired, clearAuthSession, getStoredUser } from '../services/api';
+import { apiFetch, isJwtExpired, clearAuthSession, getStoredUser, getCookie, setCookie } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => getStoredUser());
 
   const [token, setToken] = useState(() => {
-    const rawToken = localStorage.getItem('token');
+    const rawToken = getCookie('token');
     const loginTime = localStorage.getItem('loginTimestamp');
     const MAX_SESSION_MS = 24 * 60 * 60 * 1000; // 24 Hours / 1 Day
 
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
 
   // Validate active token against backend on startup
   useEffect(() => {
-    const currentToken = localStorage.getItem('token');
+    const currentToken = getCookie('token');
     if (currentToken) {
       if (isJwtExpired(currentToken)) {
         clearAuthSession();
@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }) => {
       role: userData?.role || 'STUDENT',
       avatarUrl: userData?.avatarUrl || null
     };
-    localStorage.setItem('token', authToken);
+    setCookie('token', authToken, 1);
     localStorage.setItem('user', JSON.stringify(formattedUser));
     localStorage.setItem('loginTimestamp', String(Date.now()));
     setToken(authToken);

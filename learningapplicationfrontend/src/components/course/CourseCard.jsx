@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { formatPrice } from '../../utils/formatPrice';
 import { AuthContext } from '../../context/AuthContext';
-import { API_V1_URL } from '../../services/api';
+import { API_V1_URL, getCookie } from '../../services/api';
 
 const CourseCard = ({ course, onWishlistChange }) => {
   const { user, showToast } = useContext(AuthContext);
@@ -46,7 +46,7 @@ const CourseCard = ({ course, onWishlistChange }) => {
 
     const studentId = user.id || '';
     const email = user.email || '';
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     fetch(`${API_V1_URL}/wishlists/check?courseId=${courseId}${studentId ? `&studentId=${studentId}` : ''}${email ? `&email=${encodeURIComponent(email)}` : ''}`, { headers })
@@ -73,7 +73,7 @@ const CourseCard = ({ course, onWishlistChange }) => {
 
     const studentId = user.id || '';
     const email = user.email || '';
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     const nextState = !isWishlisted;
